@@ -217,12 +217,12 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
             when (widgetType) {
                 TYPE_COMPACT -> {
                     // Compact 2x1: Line 1 = WC, Line 2 = Alert or "Блок: N"
-                    if (isAlertFlashing && alertCallerDisplay != null) {
+                    if (alertCallerDisplay != null) {
                         val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 20, 20)
                         if (phoneBitmap != null) {
                             views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
                         }
-                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setViewVisibility(R.id.widget_incoming_icon, if (isAlertFlashing) View.VISIBLE else View.INVISIBLE)
                         views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
                         views.setTextColor(R.id.widget_status_text, greenColor)
                     } else {
@@ -234,12 +234,12 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                 TYPE_EXPANDED -> {
                     // Expanded 3x1..5x1: Line 1 = WhiteCall + Badge, Line 2 = Status or Alert
                     views.setTextViewText(R.id.widget_blocked_badge, context.getString(R.string.widget_blocked_short, blockedToday))
-                    if (isAlertFlashing && alertCallerDisplay != null) {
+                    if (alertCallerDisplay != null) {
                         val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 22, 22)
                         if (phoneBitmap != null) {
                             views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
                         }
-                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setViewVisibility(R.id.widget_incoming_icon, if (isAlertFlashing) View.VISIBLE else View.INVISIBLE)
                         views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
                         views.setTextColor(R.id.widget_status_text, greenColor)
                     } else {
@@ -259,12 +259,12 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                     )
                     views.setTextViewText(R.id.widget_tall_whitelist_count, "👥 $whiteListCount")
 
-                    if (isAlertFlashing && alertCallerDisplay != null) {
-                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 22, 22)
+                    if (alertCallerDisplay != null) {
+                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 20, 20)
                         if (phoneBitmap != null) {
                             views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
                         }
-                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setViewVisibility(R.id.widget_incoming_icon, if (isAlertFlashing) View.VISIBLE else View.INVISIBLE)
                         views.setTextViewText(R.id.widget_last_call_text, "Входящий: $alertCallerDisplay")
                         views.setTextColor(R.id.widget_last_call_text, greenColor)
                     } else if (latestBlocked != null) {

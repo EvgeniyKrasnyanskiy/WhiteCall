@@ -1,68 +1,58 @@
 package com.whitecall.app.service
 
 import android.content.Context
-import android.os.Build
-import android.telephony.PhoneStateListener
-import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import com.whitecall.app.widget.WhiteCallWidgetProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 object CallStateMonitor {
 
-    private var isListening = false
-    private var currentRingingCaller: String? = null
-
-    fun startListening(context: Context) {
-        if (isListening) return
-        val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager ?: return
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
-                override fun onCallStateChanged(state: Int) {
-                    handleCallState(context, state)
-                }
-            }
-            try {
-                telephonyManager.registerTelephonyCallback(context.mainExecutor, callback)
-                isListening = true
-            } catch (_: Exception) {}
-        } else {
-            @Suppress("DEPRECATION")
-            val listener = object : PhoneStateListener() {
-                @Deprecated("Deprecated in Java")
-                override fun onCallStateChanged(state: Int, phoneNumber: String?) {
-                    handleCallState(context, state)
-                }
-            }
-            try {
-                @Suppress("DEPRECATION")
-                telephonyManager.listen(listener, PhoneStateListener.LISTEN_CALL_STATE)
-                isListening = true
-            } catch (_: Exception) {}
-        }
-    }
+    private var activeCallJob: Job? = null
 
     fun onCallBlocked(context: Context, callerDisplay: String) {
-        currentRingingCaller = callerDisplay
-        startListening(context)
-        WhiteCallWidgetProvider.updateAllWidgets(
-            context = context,
-            isAlertFlashing = true,
-            alertCallerDisplay = callerDisplay
-        )
-    }
+        // Cancel any previous alert job
+        activeCallJob?.cancel()
 
-    private fun handleCallState(context: Context, state: Int) {
-        if (state == TelephonyManager.CALL_STATE_IDLE) {
-            // Call ended (caller hung up / ringing stopped)
-            if (currentRingingCaller != null) {
-                currentRingingCaller = null
+        activeCallJob = CoroutineScope(Dispatchers.IO).launch {
+            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+            val appContext = context.applicationContext
+
+            // Loop while call is active (up to 40 seconds max carrier ring timeout)
+            for (step in 0 until 80) {
+                val isPulse = (step % 2 == 0)
+
+                // Update widgets with flashing handset icon and caller's name
                 WhiteCallWidgetProvider.updateAllWidgets(
-                    context = context,
-                    isAlertFlashing = false,
-                    alertCallerDisplay = null
+                    context = appContext,
+                    isAlertFlashing = isPulse,
+                    alertCallerDisplay = callerDisplay
                 )
+
+                delay(500)
+
+                // Check telephony state after 2 seconds
+                if (step >= 4 && telephonyManager != null) {
+                    try {
+                        @Suppress("DEPRECATION")
+                        val state = telephonyManager.callState
+                        if (state == TelephonyManager.CALL_STATE_IDLE) {
+                            // Caller stopped dialing / hung up
+                            break
+                        }
+                    } catch (_: Exception) {}
+                }
             }
+
+            // Immediately clear alert and restore normal block counter
+            WhiteCallWidgetProvider.updateAllWidgets(
+                context = appContext,
+                isAlertFlashing = false,
+                alertCallerDisplay = null
+            )
         }
     }
 }
