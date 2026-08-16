@@ -258,7 +258,10 @@ fun SettingsScreen(
                         checked = isProtectionEnabled,
                         onCheckedChange = { viewModel.setProtectionEnabled(context, it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     )
                 }
@@ -266,7 +269,49 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 3. Schedule Mode
+            // 3. Theme Selector
+            val appTheme by viewModel.appTheme.collectAsState()
+            SectionHeader(title = stringResource(R.string.section_theme))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+                    val themes = listOf(
+                        "system" to R.string.theme_system,
+                        "dark" to R.string.theme_dark,
+                        "light" to R.string.theme_light
+                    )
+                    themes.forEach { (code, nameRes) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.setAppTheme(code) }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = appTheme == code,
+                                onClick = { viewModel.setAppTheme(code) }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(nameRes),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 4. Schedule Mode
             SectionHeader(title = stringResource(R.string.section_schedule))
             Card(
                 modifier = Modifier
@@ -303,7 +348,13 @@ fun SettingsScreen(
                                     context,
                                     scheduleSettings.copy(isEnabled = it)
                                 )
-                            }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
                         )
                     }
 

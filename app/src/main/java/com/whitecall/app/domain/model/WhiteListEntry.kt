@@ -5,5 +5,6 @@ data class WhiteListEntry(
     val displayName: String,
     val phoneNumber: String,
     val normalizedNumber: String,
+    val groupId: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
 )

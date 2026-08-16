@@ -34,7 +34,10 @@ class CallBlockingRepository(
             timestamp = System.currentTimeMillis(),
             reason = reason
         )
-        return blockedCallDao.insert(entity)
+        val id = blockedCallDao.insert(entity)
+        // Keep last 500 records to prevent infinite growth
+        blockedCallDao.trimOldRecords(500)
+        return id
     }
 
     suspend fun getBlockedTodayCount(): Int {

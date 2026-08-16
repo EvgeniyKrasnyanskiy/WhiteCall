@@ -15,7 +15,7 @@ class WhiteCallApplication : Application() {
 
     val normalizePhoneNumberUseCase by lazy { NormalizePhoneNumberUseCase() }
     val whiteListRepository by lazy {
-        WhiteListRepository(database.whiteListDao(), normalizePhoneNumberUseCase)
+        WhiteListRepository(database.whiteListDao(), database.groupDao(), normalizePhoneNumberUseCase)
     }
     val callBlockingRepository by lazy {
         CallBlockingRepository(database.blockedCallDao(), preferences)

@@ -71,7 +71,13 @@ class MainActivity : AppCompatActivity() {
         requestRequiredPermissions()
 
         setContent {
-            WhiteCallTheme {
+            val appTheme by app.preferences.appThemeFlow.collectAsState()
+            val darkTheme = when (appTheme) {
+                "dark" -> true
+                "light" -> false
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+            WhiteCallTheme(darkTheme = darkTheme) {
                 MainScreen(app = app)
             }
         }

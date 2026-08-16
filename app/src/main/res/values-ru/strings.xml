@@ -40,15 +40,38 @@
     <string name="unknown_caller">Скрытый / Неизвестный номер</string>
     <string name="blocked_reason_not_in_whitelist">Не в белом списке</string>
     <string name="blocked_reason_anonymous">Скрытый / Анонимный номер</string>
+    <string name="status_in_whitelist">В белом списке</string>
+    <string name="status_not_in_whitelist">Не в белом списке</string>
+
+    <!-- Groups -->
+    <string name="group_all">Все</string>
+    <string name="group_unassigned">Основной</string>
+    <string name="whitelist_add_group">Создать группу</string>
+    <string name="dialog_add_group_title">Новая группа</string>
+    <string name="dialog_edit_group_title">Изменить группу</string>
+    <string name="dialog_delete_group_title">Удалить группу?</string>
+    <string name="dialog_delete_group_msg">Номера из этой группы будут перемещены в основной список.</string>
+    <string name="input_group_name">Название группы</string>
+    <string name="group_toggle_active">Группа активна</string>
+    <string name="group_toggle_inactive">Группа отключена</string>
+    <string name="msg_group_created">Группа создана</string>
+    <string name="msg_group_updated">Группа обновлена</string>
+    <string name="msg_group_deleted">Группа удалена</string>
 
     <!-- Settings & Info Screen -->
     <string name="settings_title">Настройки и справка</string>
     <string name="section_system_role">Интеграция с системой</string>
     <string name="card_call_screening_title">Служба фильтрации вызовов по умолчанию</string>
-    <string name="card_call_screening_desc">Требуется Android для мгновенного бесшумного сброса звонков до пробуждения экрана и звонка.</string>
+    <string name="card_call_screening_desc">Требуется для фильтрации и бесшумного сброса входящих вызовов до включения экрана и мелодии звонка.</string>
     <string name="status_granted">Активно</string>
     <string name="status_not_granted">Требуется настройка</string>
     <string name="btn_set_default">Назначить по умолчанию</string>
+
+    <!-- Theme -->
+    <string name="section_theme">Внешний вид и тема</string>
+    <string name="theme_system">Системная по умолчанию</string>
+    <string name="theme_dark">Темная тема</string>
+    <string name="theme_light">Светлая тема</string>
 
     <string name="section_protection">Режим защиты</string>
     <string name="protection_master_switch">Включить защиту от звонков</string>

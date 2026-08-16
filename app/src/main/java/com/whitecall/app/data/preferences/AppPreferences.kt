@@ -27,6 +27,9 @@ class AppPreferences(context: Context) {
     private val _appLanguageFlow = MutableStateFlow(appLanguage)
     val appLanguageFlow: StateFlow<String> = _appLanguageFlow.asStateFlow()
 
+    private val _appThemeFlow = MutableStateFlow(appTheme)
+    val appThemeFlow: StateFlow<String> = _appThemeFlow.asStateFlow()
+
     var isProtectionEnabled: Boolean
         get() = prefs.getBoolean(KEY_PROTECTION_ENABLED, true)
         set(value) {
@@ -84,6 +87,13 @@ class AppPreferences(context: Context) {
             _appLanguageFlow.value = value
         }
 
+    var appTheme: String
+        get() = prefs.getString(KEY_APP_THEME, "system") ?: "system"
+        set(value) {
+            prefs.edit().putString(KEY_APP_THEME, value).apply()
+            _appThemeFlow.value = value
+        }
+
     /**
      * Determine if call protection is currently active:
      * - If schedule is enabled, check if current time is inside schedule window.
@@ -109,5 +119,6 @@ class AppPreferences(context: Context) {
         private const val KEY_SCHEDULE_END_MINUTE = "key_schedule_end_minute"
         private const val KEY_SCHEDULE_DAYS = "key_schedule_days"
         private const val KEY_APP_LANGUAGE = "key_app_language"
+        private const val KEY_APP_THEME = "key_app_theme"
     }
 }

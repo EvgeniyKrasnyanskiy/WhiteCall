@@ -21,6 +21,9 @@ object JsonBackupHelper {
             val obj = JSONObject()
             obj.put("displayName", entry.displayName)
             obj.put("phoneNumber", entry.phoneNumber)
+            if (entry.groupId != null) {
+                obj.put("groupId", entry.groupId)
+            }
             obj.put("createdAt", entry.createdAt)
             array.put(obj)
         }
@@ -37,6 +40,7 @@ object JsonBackupHelper {
             val obj = array.getJSONObject(i)
             val displayName = obj.optString("displayName", "")
             val phoneNumber = obj.optString("phoneNumber", "")
+            val groupId = if (obj.has("groupId")) obj.optLong("groupId") else null
             val createdAt = obj.optLong("createdAt", System.currentTimeMillis())
 
             if (phoneNumber.isNotBlank()) {
@@ -45,6 +49,7 @@ object JsonBackupHelper {
                         displayName = displayName.ifBlank { phoneNumber },
                         phoneNumber = phoneNumber,
                         normalizedNumber = "",
+                        groupId = groupId,
                         createdAt = createdAt
                     )
                 )

@@ -40,15 +40,38 @@
     <string name="unknown_caller">Unknown / Hidden Number</string>
     <string name="blocked_reason_not_in_whitelist">Not in White List</string>
     <string name="blocked_reason_anonymous">Hidden / Private ID</string>
+    <string name="status_in_whitelist">In White List</string>
+    <string name="status_not_in_whitelist">Not in White List</string>
+
+    <!-- Groups -->
+    <string name="group_all">All</string>
+    <string name="group_unassigned">Default</string>
+    <string name="whitelist_add_group">Create Group</string>
+    <string name="dialog_add_group_title">New Group</string>
+    <string name="dialog_edit_group_title">Edit Group</string>
+    <string name="dialog_delete_group_title">Delete Group?</string>
+    <string name="dialog_delete_group_msg">Numbers in this group will be moved to the default list.</string>
+    <string name="input_group_name">Group Name</string>
+    <string name="group_toggle_active">Group Active</string>
+    <string name="group_toggle_inactive">Group Inactive</string>
+    <string name="msg_group_created">Group created</string>
+    <string name="msg_group_updated">Group updated</string>
+    <string name="msg_group_deleted">Group deleted</string>
 
     <!-- Settings & Info Screen -->
     <string name="settings_title">Settings &amp; Info</string>
     <string name="section_system_role">System Integration</string>
     <string name="card_call_screening_title">Default Call Screening App</string>
-    <string name="card_call_screening_desc">Required by Android to filter incoming calls before the screen wakes up or rings.</string>
+    <string name="card_call_screening_desc">Required to filter and silently reject incoming calls before screen wake-up and ringing.</string>
     <string name="status_granted">Active</string>
     <string name="status_not_granted">Requires Setup</string>
     <string name="btn_set_default">Set as Default App</string>
+
+    <!-- Theme -->
+    <string name="section_theme">Appearance &amp; Theme</string>
+    <string name="theme_system">System Default</string>
+    <string name="theme_dark">Dark Theme</string>
+    <string name="theme_light">Light Theme</string>
 
     <string name="section_protection">Protection Mode</string>
     <string name="protection_master_switch">Enable Call Protection</string>

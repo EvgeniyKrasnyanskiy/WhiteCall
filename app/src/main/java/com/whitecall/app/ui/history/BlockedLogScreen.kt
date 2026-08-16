@@ -112,11 +112,11 @@ fun BlockedLogScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(blockedCalls, key = { it.id }) { log ->
+                    items(blockedCalls, key = { it.log.id }) { item ->
                         BlockedCallItem(
-                            log = log,
+                            item = item,
                             onAddToWhiteList = {
-                                viewModel.addToWhiteList(log.phoneNumber, log.callerName) {
+                                viewModel.addToWhiteList(item.log.phoneNumber, item.log.callerName) {
                                     scope.launch {
                                         snackbarHostState.showSnackbar(
                                             context.getString(R.string.msg_number_added)
@@ -159,9 +159,12 @@ fun BlockedLogScreen(
 
 @Composable
 fun BlockedCallItem(
-    log: BlockedCallLog,
+    item: BlockedCallUiItem,
     onAddToWhiteList: () -> Unit
 ) {
+    val log = item.log
+    val isWhitelisted = item.isWhitelisted
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -178,14 +181,14 @@ fun BlockedCallItem(
             // Blocked icon badge
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.errorContainer,
+                color = if (isWhitelisted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
                 modifier = Modifier.size(42.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_call_missed),
+                        painter = painterResource(id = if (isWhitelisted) R.drawable.ic_check else R.drawable.ic_call_missed),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
+                        tint = if (isWhitelisted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -215,21 +218,30 @@ fun BlockedCallItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    val reasonText = if (log.reason == "ANONYMOUS_CALLER") {
-                        stringResource(R.string.blocked_reason_anonymous)
+                    if (isWhitelisted) {
+                        Text(
+                            text = "• ${stringResource(R.string.status_in_whitelist)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = com.whitecall.app.ui.theme.StatusActive,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     } else {
-                        stringResource(R.string.blocked_reason_not_in_whitelist)
+                        val reasonText = if (log.reason == "ANONYMOUS_CALLER") {
+                            stringResource(R.string.blocked_reason_anonymous)
+                        } else {
+                            stringResource(R.string.blocked_reason_not_in_whitelist)
+                        }
+                        Text(
+                            text = "• $reasonText",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
-                    Text(
-                        text = "• $reasonText",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
                 }
             }
 
-            // Quick add to whitelist button (if not anonymous)
-            if (log.phoneNumber.filter { it.isDigit() }.length >= 3) {
+            // Quick add to whitelist button (if not whitelisted and valid number)
+            if (!isWhitelisted && log.phoneNumber.filter { it.isDigit() }.length >= 3) {
                 IconButton(onClick = onAddToWhiteList) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_add),

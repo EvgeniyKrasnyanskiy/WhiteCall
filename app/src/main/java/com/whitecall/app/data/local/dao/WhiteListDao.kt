@@ -32,6 +32,18 @@ interface WhiteListDao {
     @Query("SELECT COUNT(*) FROM whitelist_numbers")
     fun getCountFlow(): Flow<Int>
 
+    @Query("SELECT * FROM whitelist_numbers WHERE (:groupId IS NULL AND group_id IS NULL) OR group_id = :groupId ORDER BY display_name ASC")
+    fun getNumbersByGroupFlow(groupId: Long?): Flow<List<WhiteListEntity>>
+
+    @Query("UPDATE whitelist_numbers SET group_id = NULL WHERE group_id = :groupId")
+    suspend fun unassignNumbersFromGroup(groupId: Long)
+
+    @Query("UPDATE whitelist_numbers SET group_id = :groupId WHERE id = :id")
+    suspend fun assignNumberToGroup(id: Long, groupId: Long?)
+
+    @Query("SELECT * FROM whitelist_numbers")
+    fun getAllNumbersListFlow(): Flow<List<WhiteListEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: WhiteListEntity): Long
 

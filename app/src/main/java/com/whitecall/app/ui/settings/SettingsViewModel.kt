@@ -26,6 +26,7 @@ class SettingsViewModel(
     val isProtectionEnabled: StateFlow<Boolean> = preferences.protectionEnabledFlow
     val scheduleSettings: StateFlow<ScheduleSettings> = preferences.scheduleSettingsFlow
     val appLanguage: StateFlow<String> = preferences.appLanguageFlow
+    val appTheme: StateFlow<String> = preferences.appThemeFlow
 
     private val _isRoleHeld = MutableStateFlow(false)
     val isRoleHeld: StateFlow<Boolean> = _isRoleHeld.asStateFlow()
@@ -52,6 +53,10 @@ class SettingsViewModel(
     fun setAppLanguage(languageCode: String) {
         preferences.appLanguage = languageCode
         LocaleHelper.applyLanguage(languageCode)
+    }
+
+    fun setAppTheme(theme: String) {
+        preferences.appTheme = theme
     }
 
     fun exportToJson(context: Context, uri: Uri, onResult: (Boolean) -> Unit) {

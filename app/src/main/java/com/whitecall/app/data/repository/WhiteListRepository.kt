@@ -9,12 +9,19 @@ import kotlinx.coroutines.flow.map
 
 class WhiteListRepository(
     private val whiteListDao: WhiteListDao,
+    private val groupDao: com.whitecall.app.data.local.dao.GroupDao,
     private val normalizePhoneNumberUseCase: NormalizePhoneNumberUseCase
 ) {
 
     fun getAllEntriesFlow(): Flow<List<WhiteListEntry>> {
         return whiteListDao.getAllNumbersFlow().map { list ->
             list.map { it.toDomain() }
+        }
+    }
+
+    fun getAllGroupsFlow(): Flow<List<com.whitecall.app.domain.model.GroupItem>> {
+        return groupDao.getAllGroupsFlow().map { list ->
+            list.map { com.whitecall.app.domain.model.GroupItem(it.id, it.name, it.isActive, it.createdAt) }
         }
     }
 
@@ -26,35 +33,68 @@ class WhiteListRepository(
         if (incomingNumber.isNullOrBlank()) return false
 
         val normalized = normalizePhoneNumberUseCase.normalize(incomingNumber)
-        // Check direct match
-        val directMatch = whiteListDao.findByNormalizedNumber(normalized)
-        if (directMatch != null) return true
+        var matchedEntity = whiteListDao.findByNormalizedNumber(normalized)
 
-        // Check significant digits match
-        val sigDigits = normalizePhoneNumberUseCase.extractSignificantDigits(incomingNumber)
-        if (sigDigits.length >= 7) {
-            val partialMatch = whiteListDao.findMatchingNumber(sigDigits)
-            if (partialMatch != null) return true
+        if (matchedEntity == null) {
+            val sigDigits = normalizePhoneNumberUseCase.extractSignificantDigits(incomingNumber)
+            if (sigDigits.length >= 7) {
+                matchedEntity = whiteListDao.findMatchingNumber(sigDigits)
+            }
         }
 
-        // Fallback check: iterate entries for equivalence
-        val all = whiteListDao.getAllNumbers()
-        return all.any {
-            normalizePhoneNumberUseCase.areNumbersEquivalent(it.phoneNumber, incomingNumber)
+        if (matchedEntity == null) {
+            val all = whiteListDao.getAllNumbers()
+            matchedEntity = all.firstOrNull {
+                normalizePhoneNumberUseCase.areNumbersEquivalent(it.phoneNumber, incomingNumber)
+            }
         }
+
+        if (matchedEntity == null) {
+            return false
+        }
+
+        // If number belongs to a group, check if that group is currently active
+        val gId = matchedEntity.groupId
+        if (gId != null) {
+            val group = groupDao.getGroupById(gId)
+            if (group != null && !group.isActive) {
+                return false // Group is disabled, so block calls from this group
+            }
+        }
+
+        return true
     }
 
-    suspend fun addEntry(displayName: String, phoneNumber: String): Boolean {
+    suspend fun addEntry(displayName: String, phoneNumber: String, groupId: Long? = null): Boolean {
         val normalized = normalizePhoneNumberUseCase.normalize(phoneNumber)
         if (normalized.isBlank()) return false
 
         val entity = WhiteListEntity(
             displayName = displayName.ifBlank { phoneNumber },
             phoneNumber = phoneNumber.trim(),
-            normalizedNumber = normalized
+            normalizedNumber = normalized,
+            groupId = groupId
         )
         whiteListDao.insert(entity)
         return true
+    }
+
+    suspend fun addGroup(name: String): Long {
+        val entity = com.whitecall.app.data.local.entity.GroupEntity(name = name.trim())
+        return groupDao.insert(entity)
+    }
+
+    suspend fun updateGroup(id: Long, name: String, isActive: Boolean) {
+        groupDao.update(com.whitecall.app.data.local.entity.GroupEntity(id = id, name = name.trim(), isActive = isActive))
+    }
+
+    suspend fun setGroupActive(id: Long, isActive: Boolean) {
+        groupDao.setGroupActive(id, isActive)
+    }
+
+    suspend fun deleteGroup(id: Long) {
+        whiteListDao.unassignNumbersFromGroup(id)
+        groupDao.deleteById(id)
     }
 
     suspend fun addAllEntries(entries: List<WhiteListEntry>) {
@@ -63,6 +103,7 @@ class WhiteListRepository(
                 displayName = it.displayName,
                 phoneNumber = it.phoneNumber,
                 normalizedNumber = normalizePhoneNumberUseCase.normalize(it.phoneNumber),
+                groupId = it.groupId,
                 createdAt = it.createdAt
             )
         }
@@ -82,6 +123,7 @@ class WhiteListRepository(
         displayName = displayName,
         phoneNumber = phoneNumber,
         normalizedNumber = normalizedNumber,
+        groupId = groupId,
         createdAt = createdAt
     )
 }

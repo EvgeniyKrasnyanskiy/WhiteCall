@@ -18,6 +18,8 @@ data class WhiteListEntity(
     val phoneNumber: String,
     @ColumnInfo(name = "normalized_number")
     val normalizedNumber: String,
+    @ColumnInfo(name = "group_id")
+    val groupId: Long? = null,
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis()
 )

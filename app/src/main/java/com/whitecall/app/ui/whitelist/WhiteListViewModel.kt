@@ -22,37 +22,61 @@ class WhiteListViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _selectedGroupId = MutableStateFlow<Long?>(null) // null = All
+    val selectedGroupId: StateFlow<Long?> = _selectedGroupId.asStateFlow()
+
     val allowAllContacts: StateFlow<Boolean> = preferences.allowAllContactsFlow
 
-    val entries: StateFlow<List<WhiteListEntry>> = repository.getAllEntriesFlow()
-        .combine(_searchQuery) { list, query ->
-            if (query.isBlank()) {
-                list
-            } else {
-                val trimmed = query.trim().lowercase()
-                list.filter {
-                    it.displayName.lowercase().contains(trimmed) ||
-                            it.phoneNumber.contains(trimmed) ||
-                            it.normalizedNumber.contains(trimmed)
-                }
-            }
-        }.stateIn(
+    val groups: StateFlow<List<com.whitecall.app.domain.model.GroupItem>> = repository.getAllGroupsFlow()
+        .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
+    val entries: StateFlow<List<WhiteListEntry>> = combine(
+        repository.getAllEntriesFlow(),
+        _searchQuery,
+        _selectedGroupId
+    ) { list, query, selectedGroup ->
+        val groupFiltered = when (selectedGroup) {
+            null -> list // All
+            -1L -> list.filter { it.groupId == null } // Unassigned
+            else -> list.filter { it.groupId == selectedGroup }
+        }
+
+        if (query.isBlank()) {
+            groupFiltered
+        } else {
+            val trimmed = query.trim().lowercase()
+            groupFiltered.filter {
+                it.displayName.lowercase().contains(trimmed) ||
+                        it.phoneNumber.contains(trimmed) ||
+                        it.normalizedNumber.contains(trimmed)
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+    }
+
+    fun selectGroup(groupId: Long?) {
+        _selectedGroupId.value = groupId
     }
 
     fun onToggleAllowAllContacts(enabled: Boolean) {
         preferences.allowAllContacts = enabled
     }
 
-    fun addManualNumber(name: String, phoneNumber: String, onSuccess: () -> Unit, onError: () -> Unit) {
+    fun addManualNumber(name: String, phoneNumber: String, groupId: Long? = null, onSuccess: () -> Unit, onError: () -> Unit) {
         viewModelScope.launch {
-            val success = repository.addEntry(name, phoneNumber)
+            val targetGroupId = if (groupId != null && groupId > 0) groupId else _selectedGroupId.value?.takeIf { it > 0 }
+            val success = repository.addEntry(name, phoneNumber, targetGroupId)
             if (success) {
                 onSuccess()
             } else {
@@ -61,9 +85,41 @@ class WhiteListViewModel(
         }
     }
 
-    fun addContactNumber(name: String, phoneNumber: String) {
+    fun addContactNumber(name: String, phoneNumber: String, groupId: Long? = null) {
         viewModelScope.launch {
-            repository.addEntry(name, phoneNumber)
+            val targetGroupId = if (groupId != null && groupId > 0) groupId else _selectedGroupId.value?.takeIf { it > 0 }
+            repository.addEntry(name, phoneNumber, targetGroupId)
+        }
+    }
+
+    fun addGroup(name: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            if (name.isNotBlank()) {
+                val newId = repository.addGroup(name)
+                _selectedGroupId.value = newId
+                onSuccess()
+            }
+        }
+    }
+
+    fun updateGroup(id: Long, name: String, isActive: Boolean) {
+        viewModelScope.launch {
+            repository.updateGroup(id, name, isActive)
+        }
+    }
+
+    fun setGroupActive(id: Long, isActive: Boolean) {
+        viewModelScope.launch {
+            repository.setGroupActive(id, isActive)
+        }
+    }
+
+    fun deleteGroup(id: Long) {
+        viewModelScope.launch {
+            if (_selectedGroupId.value == id) {
+                _selectedGroupId.value = null
+            }
+            repository.deleteGroup(id)
         }
     }
 
