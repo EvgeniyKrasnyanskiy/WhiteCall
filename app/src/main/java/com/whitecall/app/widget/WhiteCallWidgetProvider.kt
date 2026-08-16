@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.PorterDuff
+import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
@@ -19,6 +20,7 @@ import com.whitecall.app.ui.MainActivity
 import com.whitecall.app.util.PhoneUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class WhiteCallWidgetProvider : AppWidgetProvider() {
@@ -46,7 +48,11 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
     companion object {
         const val ACTION_TOGGLE_PROTECTION = "com.whitecall.app.ACTION_TOGGLE_PROTECTION"
 
-        fun updateAllWidgets(context: Context) {
+        fun updateAllWidgets(
+            context: Context,
+            isAlertFlashing: Boolean = false,
+            alertCallerDisplay: String? = null
+        ) {
             val appWidgetManager = AppWidgetManager.getInstance(context) ?: return
             val thisWidget = ComponentName(context, WhiteCallWidgetProvider::class.java)
             val allWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
@@ -65,12 +71,14 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                 for (widgetId in allWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_white_call)
 
-                    // 1. Status Text and Color
+                    // 1. Status Text and Power Button Icon
                     val statusText: String
                     val statusColor: Int
                     val iconRes: Int
+                    val powerColor: Int
 
                     if (isProtectionActive) {
+                        powerColor = ContextCompat.getColor(context, R.color.widget_status_active)
                         if (isScheduleEnabled) {
                             statusText = context.getString(R.string.protection_status_scheduled)
                             statusColor = ContextCompat.getColor(context, R.color.widget_status_scheduled)
@@ -81,48 +89,55 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                             iconRes = R.drawable.ic_shield
                         }
                     } else {
+                        powerColor = ContextCompat.getColor(context, R.color.widget_status_inactive)
                         statusText = context.getString(R.string.protection_status_inactive)
                         statusColor = ContextCompat.getColor(context, R.color.widget_status_inactive)
                         iconRes = R.drawable.ic_shield_off
                     }
 
-                    views.setTextViewText(R.id.widget_status_text, statusText)
-                    views.setTextColor(R.id.widget_status_text, statusColor)
-
-                    // Set status icon via safe Bitmap
-                    val statusBitmap = drawableToBitmap(context, iconRes, statusColor, 48, 48)
+                    // Left Shield Icon
+                    val statusBitmap = drawableToBitmap(context, iconRes, statusColor, 32, 32)
                     if (statusBitmap != null) {
                         views.setImageViewBitmap(R.id.widget_status_icon, statusBitmap)
                     }
 
-                    // Set toggle button icon via safe Bitmap
-                    val toggleColor = ContextCompat.getColor(context, R.color.widget_accent)
-                    val refreshBitmap = drawableToBitmap(context, R.drawable.ic_refresh, toggleColor, 48, 48)
-                    if (refreshBitmap != null) {
-                        views.setImageViewBitmap(R.id.widget_toggle_button, refreshBitmap)
-                    }
+                    // Compact Counter Badge
+                    views.setTextViewText(R.id.widget_blocked_badge, "🛡 $blockedCount")
 
-                    // 2. Blocked Count
-                    val countText = if (blockedCount > 0) {
-                        context.getString(R.string.widget_blocked_today, blockedCount)
-                    } else {
-                        context.getString(R.string.widget_no_blocked_today)
-                    }
-                    views.setTextViewText(R.id.widget_blocked_count, countText)
-
-                    // 3. Last Blocked Caller Info
-                    if (latestBlocked != null) {
+                    // Subtitle: Alert or Regular Status
+                    if (isAlertFlashing && alertCallerDisplay != null) {
+                        val greenColor = ContextCompat.getColor(context, R.color.widget_status_active)
+                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 28, 28)
+                        if (phoneBitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
+                        }
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
+                        views.setTextColor(R.id.widget_status_text, greenColor)
+                    } else if (latestBlocked != null && blockedCount > 0) {
                         val callerDisplay = latestBlocked.callerName ?: latestBlocked.phoneNumber
                         val timeDisplay = PhoneUtils.formatTimeOnly(latestBlocked.timestamp)
-                        views.setTextViewText(
-                            R.id.widget_last_blocked_caller,
-                            context.getString(R.string.widget_last_blocked, callerDisplay, timeDisplay)
-                        )
+                        val greenColor = ContextCompat.getColor(context, R.color.widget_status_active)
+                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 28, 28)
+                        if (phoneBitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
+                        }
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setTextViewText(R.id.widget_status_text, "$callerDisplay • $timeDisplay")
+                        views.setTextColor(R.id.widget_status_text, ContextCompat.getColor(context, R.color.widget_text_secondary))
                     } else {
-                        views.setTextViewText(R.id.widget_last_blocked_caller, "")
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
+                        views.setTextViewText(R.id.widget_status_text, statusText)
+                        views.setTextColor(R.id.widget_status_text, statusColor)
                     }
 
-                    // 4. PendingIntent to launch MainActivity on root tap
+                    // Right Power Button (Classic ⏻)
+                    val powerBitmap = drawableToBitmap(context, R.drawable.ic_power, powerColor, 48, 48)
+                    if (powerBitmap != null) {
+                        views.setImageViewBitmap(R.id.widget_toggle_button, powerBitmap)
+                    }
+
+                    // PendingIntent to launch MainActivity on root tap
                     val mainIntent = Intent(context, MainActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
@@ -134,7 +149,7 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                     )
                     views.setOnClickPendingIntent(R.id.widget_root, mainPendingIntent)
 
-                    // 5. PendingIntent to toggle protection status
+                    // PendingIntent to toggle protection status
                     val toggleIntent = Intent(context, WhiteCallWidgetProvider::class.java).apply {
                         action = ACTION_TOGGLE_PROTECTION
                     }
@@ -148,6 +163,19 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
 
                     appWidgetManager.updateAppWidget(widgetId, views)
                 }
+            }
+        }
+
+        /**
+         * Flashes the green incoming call icon on the widget for several cycles when a call is blocked.
+         */
+        fun flashIncomingCallAlert(context: Context, callerDisplay: String) {
+            CoroutineScope(Dispatchers.IO).launch {
+                for (i in 0 until 4) {
+                    updateAllWidgets(context, isAlertFlashing = (i % 2 == 0), alertCallerDisplay = callerDisplay)
+                    delay(400)
+                }
+                updateAllWidgets(context, isAlertFlashing = false)
             }
         }
 

@@ -36,22 +36,24 @@ fun StatusBadge(
     isScheduled: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
     val (bgColor, textColor, text) = when {
-        isActive && isScheduled -> Triple(
-            StatusScheduled.copy(alpha = 0.15f),
-            StatusScheduled,
-            "По расписанию"
-        )
-        isActive -> Triple(
-            StatusActive.copy(alpha = 0.15f),
-            StatusActive,
-            "Защита активна"
-        )
-        else -> Triple(
-            StatusInactive.copy(alpha = 0.15f),
-            StatusInactive,
-            "Защита отключена"
-        )
+        isActive && isScheduled -> if (isDark) {
+            Triple(StatusScheduled.copy(alpha = 0.15f), StatusScheduled, "По расписанию")
+        } else {
+            Triple(com.whitecall.app.ui.theme.StatusScheduledLightBg, com.whitecall.app.ui.theme.StatusScheduledLightText, "По расписанию")
+        }
+        isActive -> if (isDark) {
+            Triple(StatusActive.copy(alpha = 0.15f), StatusActive, "Защита активна")
+        } else {
+            Triple(com.whitecall.app.ui.theme.StatusActiveLightBg, com.whitecall.app.ui.theme.StatusActiveLightText, "Защита активна")
+        }
+        else -> if (isDark) {
+            Triple(StatusInactive.copy(alpha = 0.15f), StatusInactive, "Защита отключена")
+        } else {
+            Triple(com.whitecall.app.ui.theme.StatusInactiveLightBg, com.whitecall.app.ui.theme.StatusInactiveLightText, "Защита отключена")
+        }
     }
 
     Surface(

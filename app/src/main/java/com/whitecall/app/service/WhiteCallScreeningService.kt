@@ -56,8 +56,9 @@ class WhiteCallScreeningService : CallScreeningService() {
                         reason = result.reason
                     )
 
-                    // Update Home Screen Widget immediately with the new blocked call
-                    WhiteCallWidgetProvider.updateAllWidgets(this@WhiteCallScreeningService)
+                    // Flash green incoming handset alert on widget
+                    val alertName = result.callerName ?: displayPhone
+                    WhiteCallWidgetProvider.flashIncomingCallAlert(this@WhiteCallScreeningService, alertName)
                 } else {
                     val response = CallResponse.Builder()
                         .setDisallowCall(false)
