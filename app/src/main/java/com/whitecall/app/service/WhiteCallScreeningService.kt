@@ -66,9 +66,9 @@ class WhiteCallScreeningService : CallScreeningService() {
                         reason = result.reason
                     )
 
-                    // Flash green incoming handset alert on widget
+                    // Track ringing duration and show caller on widget until ringing ends
                     val alertName = result.callerName ?: displayPhone
-                    WhiteCallWidgetProvider.flashIncomingCallAlert(this@WhiteCallScreeningService, alertName)
+                    com.whitecall.app.service.CallStateMonitor.onCallBlocked(this@WhiteCallScreeningService, alertName)
                 } else {
                     val response = CallResponse.Builder()
                         .setDisallowCall(false)

@@ -21,7 +21,7 @@ interface BlockedCallDao {
     suspend fun getLatestBlockedCall(): BlockedCallEntity?
 
     @Query("SELECT COUNT(*) FROM blocked_calls WHERE timestamp >= :sinceTimestamp")
-    suspend fun countBlockedCallsSince(sinceTimestamp: Long): Int
+    suspend fun getBlockedCountSince(sinceTimestamp: Long): Int
 
     @Query("SELECT COUNT(*) FROM blocked_calls WHERE timestamp >= :sinceTimestamp")
     fun countBlockedCallsSinceFlow(sinceTimestamp: Long): Flow<Int>

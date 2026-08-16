@@ -42,7 +42,17 @@ class CallBlockingRepository(
 
     suspend fun getBlockedTodayCount(): Int {
         val midnight = getTodayMidnightTimestamp()
-        return blockedCallDao.countBlockedCallsSince(midnight)
+        return blockedCallDao.getBlockedCountSince(midnight)
+    }
+
+    suspend fun getBlockedWeekCount(): Int {
+        val sevenDaysAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000)
+        return blockedCallDao.getBlockedCountSince(sevenDaysAgo)
+    }
+
+    suspend fun getBlockedMonthCount(): Int {
+        val thirtyDaysAgo = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
+        return blockedCallDao.getBlockedCountSince(thirtyDaysAgo)
     }
 
     fun getBlockedTodayCountFlow(): Flow<Int> {

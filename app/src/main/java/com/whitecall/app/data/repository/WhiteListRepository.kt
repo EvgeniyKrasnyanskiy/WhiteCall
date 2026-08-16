@@ -29,6 +29,10 @@ class WhiteListRepository(
         return whiteListDao.getAllNumbers().map { it.toDomain() }
     }
 
+    suspend fun getWhiteListCount(): Int {
+        return whiteListDao.getAllNumbers().size
+    }
+
     suspend fun isNumberInWhiteList(incomingNumber: String?): Boolean {
         if (incomingNumber.isNullOrBlank()) return false
 

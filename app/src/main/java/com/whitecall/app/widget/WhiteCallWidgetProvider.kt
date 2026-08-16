@@ -23,7 +23,6 @@ import com.whitecall.app.ui.MainActivity
 import com.whitecall.app.util.PhoneUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class WhiteCallWidgetProvider : AppWidgetProvider() {
@@ -75,19 +74,28 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                 val app = context.applicationContext as? WhiteCallApplication
                 val prefs = app?.preferences
                 val callRepo = app?.callBlockingRepository
+                val whiteListRepo = app?.whiteListRepository
 
                 val isProtectionActive = prefs?.isProtectionCurrentlyActive() ?: false
                 val isScheduleEnabled = prefs?.scheduleSettings?.isEnabled ?: false
-                val blockedCount = callRepo?.getBlockedTodayCount() ?: 0
+                val blockedToday = callRepo?.getBlockedTodayCount() ?: 0
+                val blockedWeek = callRepo?.getBlockedWeekCount() ?: 0
+                val blockedMonth = callRepo?.getBlockedMonthCount() ?: 0
+                val whiteListCount = whiteListRepo?.getWhiteListCount() ?: 0
+                val latestBlocked = callRepo?.getLatestBlockedCall()
 
                 for (widgetId in allWidgetIds) {
                     val compactViews = buildWidgetViews(
                         context = context,
                         layoutRes = R.layout.widget_white_call_compact,
-                        isCompact = true,
+                        widgetType = TYPE_COMPACT,
                         isProtectionActive = isProtectionActive,
                         isScheduleEnabled = isScheduleEnabled,
-                        blockedCount = blockedCount,
+                        blockedToday = blockedToday,
+                        blockedWeek = blockedWeek,
+                        blockedMonth = blockedMonth,
+                        whiteListCount = whiteListCount,
+                        latestBlocked = latestBlocked,
                         isAlertFlashing = isAlertFlashing,
                         alertCallerDisplay = alertCallerDisplay
                     )
@@ -95,10 +103,29 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                     val expandedViews = buildWidgetViews(
                         context = context,
                         layoutRes = R.layout.widget_white_call_expanded,
-                        isCompact = false,
+                        widgetType = TYPE_EXPANDED,
                         isProtectionActive = isProtectionActive,
                         isScheduleEnabled = isScheduleEnabled,
-                        blockedCount = blockedCount,
+                        blockedToday = blockedToday,
+                        blockedWeek = blockedWeek,
+                        blockedMonth = blockedMonth,
+                        whiteListCount = whiteListCount,
+                        latestBlocked = latestBlocked,
+                        isAlertFlashing = isAlertFlashing,
+                        alertCallerDisplay = alertCallerDisplay
+                    )
+
+                    val tallViews = buildWidgetViews(
+                        context = context,
+                        layoutRes = R.layout.widget_white_call_tall,
+                        widgetType = TYPE_TALL,
+                        isProtectionActive = isProtectionActive,
+                        isScheduleEnabled = isScheduleEnabled,
+                        blockedToday = blockedToday,
+                        blockedWeek = blockedWeek,
+                        blockedMonth = blockedMonth,
+                        whiteListCount = whiteListCount,
+                        latestBlocked = latestBlocked,
                         isAlertFlashing = isAlertFlashing,
                         alertCallerDisplay = alertCallerDisplay
                     )
@@ -106,28 +133,41 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val viewsMap = mapOf(
                             SizeF(80f, 40f) to compactViews,    // 2x1
-                            SizeF(80f, 100f) to compactViews,   // 2x2
-                            SizeF(170f, 40f) to expandedViews,  // 3x1, 4x1, 5x1
-                            SizeF(170f, 90f) to expandedViews   // 3x2, 4x2, 5x2
+                            SizeF(150f, 40f) to expandedViews,  // 3x1, 4x1, 5x1
+                            SizeF(80f, 70f) to tallViews,       // 2x2
+                            SizeF(150f, 70f) to tallViews       // 3x2, 4x2, 5x2
                         )
                         appWidgetManager.updateAppWidget(widgetId, RemoteViews(viewsMap))
                     } else {
                         val options = appWidgetManager.getAppWidgetOptions(widgetId)
                         val minWidth = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 0
-                        val chosenViews = if (minWidth < 170) compactViews else expandedViews
+                        val minHeight = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: 0
+                        val chosenViews = when {
+                            minHeight >= 70 -> tallViews
+                            minWidth >= 150 -> expandedViews
+                            else -> compactViews
+                        }
                         appWidgetManager.updateAppWidget(widgetId, chosenViews)
                     }
                 }
             }
         }
 
+        private const val TYPE_COMPACT = 1
+        private const val TYPE_EXPANDED = 2
+        private const val TYPE_TALL = 3
+
         private fun buildWidgetViews(
             context: Context,
             layoutRes: Int,
-            isCompact: Boolean,
+            widgetType: Int,
             isProtectionActive: Boolean,
             isScheduleEnabled: Boolean,
-            blockedCount: Int,
+            blockedToday: Int,
+            blockedWeek: Int,
+            blockedMonth: Int,
+            whiteListCount: Int,
+            latestBlocked: com.whitecall.app.domain.model.BlockedCallLog?,
             isAlertFlashing: Boolean,
             alertCallerDisplay: String?
         ): RemoteViews {
@@ -158,41 +198,87 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
             }
 
             // Left status icon
-            val iconSize = if (isCompact) 28 else 36
+            val iconSize = if (widgetType == TYPE_COMPACT) 26 else 32
             val statusBitmap = drawableToBitmap(context, iconRes, statusColor, iconSize, iconSize)
             if (statusBitmap != null) {
                 views.setImageViewBitmap(R.id.widget_status_icon, statusBitmap)
             }
 
-            // Counter Badge (in expanded view)
-            views.setTextViewText(R.id.widget_blocked_badge, context.getString(R.string.widget_blocked_short, blockedCount))
-
-            // Subtitle Row / Alert Handling
-            val greenColor = ContextCompat.getColor(context, R.color.widget_status_active)
-            if (isAlertFlashing && alertCallerDisplay != null) {
-                val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 24, 24)
-                if (phoneBitmap != null) {
-                    views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
-                }
-                views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
-                views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
-                views.setTextColor(R.id.widget_status_text, greenColor)
-            } else {
-                views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
-                if (isCompact) {
-                    views.setTextViewText(R.id.widget_status_text, context.getString(R.string.widget_blocked_short, blockedCount))
-                    views.setTextColor(R.id.widget_status_text, ContextCompat.getColor(context, R.color.widget_text_secondary))
-                } else {
-                    views.setTextViewText(R.id.widget_status_text, statusText)
-                    views.setTextColor(R.id.widget_status_text, statusColor)
-                }
-            }
-
             // Right Power Button
-            val powerSize = if (isCompact) 44 else 56
+            val powerSize = if (widgetType == TYPE_COMPACT) 36 else 44
             val powerBitmap = drawableToBitmap(context, R.drawable.ic_power, powerColor, powerSize, powerSize)
             if (powerBitmap != null) {
                 views.setImageViewBitmap(R.id.widget_toggle_button, powerBitmap)
+            }
+
+            val greenColor = ContextCompat.getColor(context, R.color.widget_status_active)
+
+            // Fill content based on type
+            when (widgetType) {
+                TYPE_COMPACT -> {
+                    // Compact 2x1: Line 1 = WC, Line 2 = Alert or "Блок: N"
+                    if (isAlertFlashing && alertCallerDisplay != null) {
+                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 20, 20)
+                        if (phoneBitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
+                        }
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
+                        views.setTextColor(R.id.widget_status_text, greenColor)
+                    } else {
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
+                        views.setTextViewText(R.id.widget_status_text, context.getString(R.string.widget_blocked_short, blockedToday))
+                        views.setTextColor(R.id.widget_status_text, ContextCompat.getColor(context, R.color.widget_text_secondary))
+                    }
+                }
+                TYPE_EXPANDED -> {
+                    // Expanded 3x1..5x1: Line 1 = WhiteCall + Badge, Line 2 = Status or Alert
+                    views.setTextViewText(R.id.widget_blocked_badge, context.getString(R.string.widget_blocked_short, blockedToday))
+                    if (isAlertFlashing && alertCallerDisplay != null) {
+                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 22, 22)
+                        if (phoneBitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
+                        }
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
+                        views.setTextColor(R.id.widget_status_text, greenColor)
+                    } else {
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
+                        views.setTextViewText(R.id.widget_status_text, statusText)
+                        views.setTextColor(R.id.widget_status_text, statusColor)
+                    }
+                }
+                TYPE_TALL -> {
+                    // Tall 2x2..5x2: Top = WhiteCall + Status, Middle = Stats (День/Нед/Мес + Список), Bottom = Last Call or Alert
+                    views.setTextViewText(R.id.widget_status_text, statusText)
+                    views.setTextColor(R.id.widget_status_text, statusColor)
+
+                    views.setTextViewText(
+                        R.id.widget_tall_stats,
+                        "Блок: День: $blockedToday • Нед: $blockedWeek • Мес: $blockedMonth"
+                    )
+                    views.setTextViewText(R.id.widget_tall_whitelist_count, "👥 $whiteListCount")
+
+                    if (isAlertFlashing && alertCallerDisplay != null) {
+                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 22, 22)
+                        if (phoneBitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
+                        }
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
+                        views.setTextViewText(R.id.widget_last_call_text, "Входящий: $alertCallerDisplay")
+                        views.setTextColor(R.id.widget_last_call_text, greenColor)
+                    } else if (latestBlocked != null) {
+                        val callerDisplay = latestBlocked.callerName ?: latestBlocked.phoneNumber
+                        val timeDisplay = PhoneUtils.formatTimeOnly(latestBlocked.timestamp)
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
+                        views.setTextViewText(R.id.widget_last_call_text, "Последний: $callerDisplay • $timeDisplay")
+                        views.setTextColor(R.id.widget_last_call_text, ContextCompat.getColor(context, R.color.widget_text_secondary))
+                    } else {
+                        views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
+                        views.setTextViewText(R.id.widget_last_call_text, "Нет заблокированных звонков")
+                        views.setTextColor(R.id.widget_last_call_text, ContextCompat.getColor(context, R.color.widget_text_secondary))
+                    }
+                }
             }
 
             // Tap root -> open app
@@ -220,19 +306,6 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
             views.setOnClickPendingIntent(R.id.widget_toggle_button, togglePendingIntent)
 
             return views
-        }
-
-        /**
-         * Flashes the green incoming call icon on the widget for several cycles when a call is blocked.
-         */
-        fun flashIncomingCallAlert(context: Context, callerDisplay: String) {
-            CoroutineScope(Dispatchers.IO).launch {
-                for (i in 0 until 4) {
-                    updateAllWidgets(context, isAlertFlashing = (i % 2 == 0), alertCallerDisplay = callerDisplay)
-                    delay(400)
-                }
-                updateAllWidgets(context, isAlertFlashing = false)
-            }
         }
 
         private fun drawableToBitmap(
