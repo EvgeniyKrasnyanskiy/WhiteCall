@@ -267,6 +267,85 @@ fun SettingsScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Block Mode Selector (Reject vs Silence)
+            val currentBlockMode by viewModel.blockMode.collectAsState()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = stringResource(R.string.setting_block_mode_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Mode 1: Reject
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setBlockMode(com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_REJECT) }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentBlockMode == com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_REJECT,
+                            onClick = { viewModel.setBlockMode(com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_REJECT) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = stringResource(R.string.block_mode_reject),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = stringResource(R.string.block_mode_reject_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Mode 2: Silence (no drop, rings for caller, phone silent)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setBlockMode(com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_SILENCE) }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentBlockMode == com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_SILENCE,
+                            onClick = { viewModel.setBlockMode(com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_SILENCE) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = stringResource(R.string.block_mode_silence),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = stringResource(R.string.block_mode_silence_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // 3. Theme Selector

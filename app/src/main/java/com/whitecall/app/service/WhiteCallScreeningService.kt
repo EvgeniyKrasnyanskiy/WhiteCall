@@ -39,13 +39,22 @@ class WhiteCallScreeningService : CallScreeningService() {
                 )
 
                 if (result.shouldBlock) {
-                    val response = CallResponse.Builder()
-                        .setDisallowCall(true)
-                        .setRejectCall(true)
-                        .setSkipNotification(true)
-                        .setSkipCallLog(false)
-                        .build()
-
+                    val blockMode = app.preferences.blockMode
+                    val response = if (blockMode == com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_SILENCE) {
+                        CallResponse.Builder()
+                            .setDisallowCall(false)
+                            .setSilenceCall(true)
+                            .setSkipCallLog(true)
+                            .setSkipNotification(true)
+                            .build()
+                    } else {
+                        CallResponse.Builder()
+                            .setDisallowCall(true)
+                            .setRejectCall(true)
+                            .setSkipCallLog(false)
+                            .setSkipNotification(true)
+                            .build()
+                    }
                     respondToCall(callDetails, response)
 
                     // Log blocked call in database

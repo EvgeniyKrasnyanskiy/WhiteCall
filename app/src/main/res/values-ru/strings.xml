@@ -126,4 +126,12 @@
     <string name="perm_contacts_desc">Разрешение контактов необходимо, чтобы WhiteCall автоматически пропускал звонки от людей из вашей телефонной книги без ручного добавления каждого номера.</string>
     <string name="btn_grant">Предоставить</string>
     <string name="btn_later">Позже</string>
+    <string name="widget_blocked_short">Блок: %d</string>
+    <string name="widget_title_compact">WC</string>
+    <string name="widget_title_full">WhiteCall</string>
+    <string name="setting_block_mode_title">Режим блокировки вызовов</string>
+    <string name="block_mode_reject">Сброс вызова (абонент занят)</string>
+    <string name="block_mode_reject_desc">Звонящий сразу получает сигнал «Занято» и сброс соединения.</string>
+    <string name="block_mode_silence">Беззвучный режим (гудки звонящему)</string>
+    <string name="block_mode_silence_desc">Звонящий слышит обычные гудки. Телефон не звонит, экран не загорается, звонок не появляется в стандартной звонилке.</string>
 </resources>

@@ -27,6 +27,7 @@ class SettingsViewModel(
     val scheduleSettings: StateFlow<ScheduleSettings> = preferences.scheduleSettingsFlow
     val appLanguage: StateFlow<String> = preferences.appLanguageFlow
     val appTheme: StateFlow<String> = preferences.appThemeFlow
+    val blockMode: StateFlow<String> = preferences.blockModeFlow
 
     private val _isRoleHeld = MutableStateFlow(false)
     val isRoleHeld: StateFlow<Boolean> = _isRoleHeld.asStateFlow()
@@ -57,6 +58,10 @@ class SettingsViewModel(
 
     fun setAppTheme(theme: String) {
         preferences.appTheme = theme
+    }
+
+    fun setBlockMode(mode: String) {
+        preferences.blockMode = mode
     }
 
     fun exportToJson(context: Context, uri: Uri, onResult: (Boolean) -> Unit) {

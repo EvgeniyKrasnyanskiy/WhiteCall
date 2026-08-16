@@ -30,6 +30,9 @@ class AppPreferences(context: Context) {
     private val _appThemeFlow = MutableStateFlow(appTheme)
     val appThemeFlow: StateFlow<String> = _appThemeFlow.asStateFlow()
 
+    private val _blockModeFlow = MutableStateFlow(blockMode)
+    val blockModeFlow: StateFlow<String> = _blockModeFlow.asStateFlow()
+
     var isProtectionEnabled: Boolean
         get() = prefs.getBoolean(KEY_PROTECTION_ENABLED, true)
         set(value) {
@@ -94,6 +97,13 @@ class AppPreferences(context: Context) {
             _appThemeFlow.value = value
         }
 
+    var blockMode: String
+        get() = prefs.getString(KEY_BLOCK_MODE, BLOCK_MODE_REJECT) ?: BLOCK_MODE_REJECT
+        set(value) {
+            prefs.edit().putString(KEY_BLOCK_MODE, value).apply()
+            _blockModeFlow.value = value
+        }
+
     /**
      * Determine if call protection is currently active:
      * - If schedule is enabled, check if current time is inside schedule window.
@@ -109,6 +119,9 @@ class AppPreferences(context: Context) {
     }
 
     companion object {
+        const val BLOCK_MODE_REJECT = "reject"
+        const val BLOCK_MODE_SILENCE = "silence"
+
         private const val PREFS_NAME = "whitecall_preferences"
         private const val KEY_PROTECTION_ENABLED = "key_protection_enabled"
         private const val KEY_ALLOW_ALL_CONTACTS = "key_allow_all_contacts"
@@ -120,5 +133,6 @@ class AppPreferences(context: Context) {
         private const val KEY_SCHEDULE_DAYS = "key_schedule_days"
         private const val KEY_APP_LANGUAGE = "key_app_language"
         private const val KEY_APP_THEME = "key_app_theme"
+        private const val KEY_BLOCK_MODE = "key_block_mode"
     }
 }

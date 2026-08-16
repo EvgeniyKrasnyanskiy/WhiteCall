@@ -126,4 +126,12 @@
     <string name="perm_contacts_desc">Allowing contacts access lets WhiteCall automatically allow calls from people in your phonebook without having to add them manually.</string>
     <string name="btn_grant">Grant Permission</string>
     <string name="btn_later">Later</string>
+    <string name="widget_blocked_short">Block: %d</string>
+    <string name="widget_title_compact">WC</string>
+    <string name="widget_title_full">WhiteCall</string>
+    <string name="setting_block_mode_title">Call Blocking Mode</string>
+    <string name="block_mode_reject">Reject call (User busy)</string>
+    <string name="block_mode_reject_desc">Caller immediately gets a busy tone and disconnected.</string>
+    <string name="block_mode_silence">Silent screening (Rings for caller)</string>
+    <string name="block_mode_silence_desc">Caller hears normal ringing tone. Phone does not ring or wake up screen.</string>
 </resources>
