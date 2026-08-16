@@ -13,4 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+replay_*.log
+hs_err_*.log
+.vscode/
 .agent/scratch/
