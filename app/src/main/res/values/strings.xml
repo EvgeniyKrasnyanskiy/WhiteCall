@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WhiteCall</string>
+    <string name="tagline">White List Call Blocker</string>
+
+    <!-- Navigation -->
+    <string name="tab_whitelist">White List</string>
+    <string name="tab_blocked_log">Blocked Log</string>
+    <string name="tab_settings">Settings &amp; Info</string>
+
+    <!-- White List Screen -->
+    <string name="whitelist_title">White List</string>
+    <string name="whitelist_search_hint">Search number or name…</string>
+    <string name="whitelist_allow_all_contacts">Allow all phonebook contacts</string>
+    <string name="whitelist_allow_all_contacts_desc">Incoming calls from your saved contacts will not be blocked</string>
+    <string name="whitelist_empty_title">White List is Empty</string>
+    <string name="whitelist_empty_desc">Calls from numbers not added here or in your contacts will be silently blocked.</string>
+    <string name="whitelist_add_from_contacts">From Contacts</string>
+    <string name="whitelist_add_manual">Manual Input</string>
+    <string name="dialog_add_number_title">Add to White List</string>
+    <string name="input_name_label">Contact Name (Optional)</string>
+    <string name="input_phone_label">Phone Number</string>
+    <string name="input_phone_placeholder">+1 234 567 8900</string>
+    <string name="error_invalid_phone">Please enter a valid phone number</string>
+    <string name="error_already_exists">Number already in White List</string>
+    <string name="btn_add">Add</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_delete">Delete</string>
+    <string name="msg_number_added">Number added to White List</string>
+    <string name="msg_number_deleted">Number removed</string>
+
+    <!-- Blocked Log Screen -->
+    <string name="blocked_log_title">Blocked Calls</string>
+    <string name="blocked_log_empty_title">No Blocked Calls</string>
+    <string name="blocked_log_empty_desc">When an unallowed incoming call is blocked, it will appear here.</string>
+    <string name="btn_clear_log">Clear Log</string>
+    <string name="dialog_clear_log_title">Clear Blocked History?</string>
+    <string name="dialog_clear_log_msg">All blocked call records will be permanently deleted.</string>
+    <string name="btn_add_to_whitelist">Add to White List</string>
+    <string name="unknown_caller">Unknown / Hidden Number</string>
+    <string name="blocked_reason_not_in_whitelist">Not in White List</string>
+    <string name="blocked_reason_anonymous">Hidden / Private ID</string>
+
+    <!-- Settings & Info Screen -->
+    <string name="settings_title">Settings &amp; Info</string>
+    <string name="section_system_role">System Integration</string>
+    <string name="card_call_screening_title">Default Call Screening App</string>
+    <string name="card_call_screening_desc">Required by Android to filter incoming calls before the screen wakes up or rings.</string>
+    <string name="status_granted">Active</string>
+    <string name="status_not_granted">Requires Setup</string>
+    <string name="btn_set_default">Set as Default App</string>
+
+    <string name="section_protection">Protection Mode</string>
+    <string name="protection_master_switch">Enable Call Protection</string>
+    <string name="protection_master_switch_desc">Silently reject calls not in your White List</string>
+    <string name="protection_status_active">Protection Active</string>
+    <string name="protection_status_scheduled">Active by Schedule</string>
+    <string name="protection_status_inactive">Protection Disabled</string>
+
+    <string name="section_schedule">Time Schedule</string>
+    <string name="schedule_enable">Schedule Mode</string>
+    <string name="schedule_enable_desc">Automatically activate protection during specified hours and days</string>
+    <string name="schedule_start_time">Start Time</string>
+    <string name="schedule_end_time">End Time</string>
+    <string name="schedule_days">Active Days</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
+
+    <string name="section_language">Language</string>
+    <string name="lang_system">System Default</string>
+    <string name="lang_en">English</string>
+    <string name="lang_ru">Русский</string>
+
+    <string name="section_backup">Backup &amp; Restore</string>
+    <string name="btn_export_json">Export White List (JSON)</string>
+    <string name="btn_import_json">Import White List (JSON)</string>
+    <string name="msg_export_success">White List exported successfully</string>
+    <string name="msg_import_success">Imported %1$d numbers</string>
+    <string name="msg_import_error">Failed to import JSON file</string>
+
+    <string name="section_faq">Quick Help &amp; OEM Guides</string>
+    <string name="faq_how_it_works_title">How WhiteCall Works</string>
+    <string name="faq_how_it_works_desc">WhiteCall uses Android\'s CallScreeningService to inspect incoming calls in real-time. If the caller is not in your White List (or contacts if enabled), the call is instantly rejected with zero ringtone or vibration.</string>
+    <string name="faq_permissions_title">Required Permissions</string>
+    <string name="faq_permissions_desc">• Call Screening Role: To block calls silently.\n• Contacts: To let your saved contacts reach you.\n• Phone State: To read caller metadata.</string>
+    <string name="faq_oem_title">Xiaomi / Samsung / Huawei Background Settings</string>
+    <string name="faq_oem_desc">To prevent the system from killing WhiteCall:\n• Xiaomi (MIUI/HyperOS): Enable Autostart in App Info, set Battery Saver to "No restrictions".\n• Samsung: Add WhiteCall to "Never sleeping apps" under Battery Settings.\n• Huawei: Set Launch settings to "Manage manually" and allow background activity.</string>
+
+    <!-- AppWidget -->
+    <string name="widget_name">WhiteCall Status</string>
+    <string name="widget_blocked_today">Blocked today: %1$d</string>
+    <string name="widget_last_blocked">Last blocked: %1$s (%2$s)</string>
+    <string name="widget_no_blocked_today">No calls blocked today</string>
+    <string name="widget_toggle_protection">Toggle</string>
+
+    <!-- Permissions Dialog -->
+    <string name="perm_contacts_title">Contacts Permission Needed</string>
+    <string name="perm_contacts_desc">Allowing contacts access lets WhiteCall automatically allow calls from people in your phonebook without having to add them manually.</string>
+    <string name="btn_grant">Grant Permission</string>
+    <string name="btn_later">Later</string>
+</resources>

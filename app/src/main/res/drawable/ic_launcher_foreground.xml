@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Shield -->
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M54,22 L78,32 C78,56 67,73 54,84 C41,73 30,56 30,32 Z" />
+    <!-- Inner Shield Gradient Accent -->
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M54,26 L74,35 C74,54 64,69 54,78 C44,69 34,54 34,35 Z" />
+    <!-- White Checkmark / Security symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,58 L40,50 L43,47 L48,52 L64,36 L67,39 Z" />
+</vector>

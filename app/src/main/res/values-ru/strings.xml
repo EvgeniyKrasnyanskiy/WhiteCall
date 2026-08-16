@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WhiteCall</string>
+    <string name="tagline">Блокировщик звонков по белому списку</string>
+
+    <!-- Navigation -->
+    <string name="tab_whitelist">Белый список</string>
+    <string name="tab_blocked_log">Журнал</string>
+    <string name="tab_settings">Настройки</string>
+
+    <!-- White List Screen -->
+    <string name="whitelist_title">Белый список</string>
+    <string name="whitelist_search_hint">Поиск по номеру или имени…</string>
+    <string name="whitelist_allow_all_contacts">Разрешить все контакты из книги</string>
+    <string name="whitelist_allow_all_contacts_desc">Входящие звонки от ваших сохраненных контактов не будут блокироваться</string>
+    <string name="whitelist_empty_title">Белый список пуст</string>
+    <string name="whitelist_empty_desc">Все входящие звонки с номеров, не добавленных сюда или в контакты, будут автоматически блокироваться.</string>
+    <string name="whitelist_add_from_contacts">Из контактов</string>
+    <string name="whitelist_add_manual">Вручную</string>
+    <string name="dialog_add_number_title">Добавить в белый список</string>
+    <string name="input_name_label">Имя контакта (необязательно)</string>
+    <string name="input_phone_label">Номер телефона</string>
+    <string name="input_phone_placeholder">+7 999 123 45 67</string>
+    <string name="error_invalid_phone">Введите корректный номер телефона</string>
+    <string name="error_already_exists">Номер уже в белом списке</string>
+    <string name="btn_add">Добавить</string>
+    <string name="btn_cancel">Отмена</string>
+    <string name="btn_delete">Удалить</string>
+    <string name="msg_number_added">Номер добавлен в белый список</string>
+    <string name="msg_number_deleted">Номер удален</string>
+
+    <!-- Blocked Log Screen -->
+    <string name="blocked_log_title">Заблокированные вызовы</string>
+    <string name="blocked_log_empty_title">Нет заблокированных звонков</string>
+    <string name="blocked_log_empty_desc">Когда поступит и будет отклонен звонок не из белого списка, он появится здесь.</string>
+    <string name="btn_clear_log">Очистить журнал</string>
+    <string name="dialog_clear_log_title">Очистить историю блокировок?</string>
+    <string name="dialog_clear_log_msg">Все записи о заблокированных вызовах будут удалены навсегда.</string>
+    <string name="btn_add_to_whitelist">В белый список</string>
+    <string name="unknown_caller">Скрытый / Неизвестный номер</string>
+    <string name="blocked_reason_not_in_whitelist">Не в белом списке</string>
+    <string name="blocked_reason_anonymous">Скрытый / Анонимный номер</string>
+
+    <!-- Settings & Info Screen -->
+    <string name="settings_title">Настройки и справка</string>
+    <string name="section_system_role">Интеграция с системой</string>
+    <string name="card_call_screening_title">Служба фильтрации вызовов по умолчанию</string>
+    <string name="card_call_screening_desc">Требуется Android для мгновенного бесшумного сброса звонков до пробуждения экрана и звонка.</string>
+    <string name="status_granted">Активно</string>
+    <string name="status_not_granted">Требуется настройка</string>
+    <string name="btn_set_default">Назначить по умолчанию</string>
+
+    <string name="section_protection">Режим защиты</string>
+    <string name="protection_master_switch">Включить защиту от звонков</string>
+    <string name="protection_master_switch_desc">Бесшумно отклонять все входящие не из белого списка</string>
+    <string name="protection_status_active">Защита активна</string>
+    <string name="protection_status_scheduled">Активно по расписанию</string>
+    <string name="protection_status_inactive">Защита отключена</string>
+
+    <string name="section_schedule">Расписание работы</string>
+    <string name="schedule_enable">Работа по расписанию</string>
+    <string name="schedule_enable_desc">Автоматически включать защиту только в заданные часы и дни</string>
+    <string name="schedule_start_time">Время начала</string>
+    <string name="schedule_end_time">Время окончания</string>
+    <string name="schedule_days">Дни недели</string>
+    <string name="day_mon">Пн</string>
+    <string name="day_tue">Вт</string>
+    <string name="day_wed">Ср</string>
+    <string name="day_thu">Чт</string>
+    <string name="day_fri">Пт</string>
+    <string name="day_sat">Сб</string>
+    <string name="day_sun">Вс</string>
+
+    <string name="section_language">Язык приложения</string>
+    <string name="lang_system">Системный по умолчанию</string>
+    <string name="lang_en">English</string>
+    <string name="lang_ru">Русский</string>
+
+    <string name="section_backup">Резервное копирование</string>
+    <string name="btn_export_json">Экспорт белого списка (JSON)</string>
+    <string name="btn_import_json">Импорт белого списка (JSON)</string>
+    <string name="msg_export_success">Белый список успешно экспортирован</string>
+    <string name="msg_import_success">Импортировано %1$d номеров</string>
+    <string name="msg_import_error">Ошибка чтения файла JSON</string>
+
+    <string name="section_faq">Справка и настройки OEM-прошивок</string>
+    <string name="faq_how_it_works_title">Как работает WhiteCall</string>
+    <string name="faq_how_it_works_desc">WhiteCall использует системный CallScreeningService в Android для проверки звонков на лету. Если номера нет в белом списке (или контактах), вызов сбрасывается мгновенно без звука и вибрации.</string>
+    <string name="faq_permissions_title">Необходимые разрешения</string>
+    <string name="faq_permissions_desc">• Роль фильтрации звонков: для бесшумного сброса.\n• Контакты: для автоматического пропуска звонков от ваших контактов.\n• Телефон: для получения метаданных звонящего.</string>
+    <string name="faq_oem_title">Настройки для Xiaomi / Samsung / Huawei</string>
+    <string name="faq_oem_desc">Чтобы система не останавливала WhiteCall в фоне:\n• Xiaomi (MIUI/HyperOS): Включите «Автозапуск» в свойствах приложения, установите Контроль активности в «Нет ограничений».\n• Samsung: Добавьте WhiteCall в список «Никогда не спящие приложения» в настройках батареи.\n• Huawei: В разделе «Запуск приложений» переведите WhiteCall в режим «Управление вручную» и разрешите работу в фоне.</string>
+
+    <!-- AppWidget -->
+    <string name="widget_name">Статус WhiteCall</string>
+    <string name="widget_blocked_today">Заблокировано сегодня: %1$d</string>
+    <string name="widget_last_blocked">Посл. отклонен: %1$s (%2$s)</string>
+    <string name="widget_no_blocked_today">Сегодня блокировок нет</string>
+    <string name="widget_toggle_protection">Переключить</string>
+
+    <!-- Permissions Dialog -->
+    <string name="perm_contacts_title">Требуется доступ к контактам</string>
+    <string name="perm_contacts_desc">Разрешение контактов необходимо, чтобы WhiteCall автоматически пропускал звонки от людей из вашей телефонной книги без ручного добавления каждого номера.</string>
+    <string name="btn_grant">Предоставить</string>
+    <string name="btn_later">Позже</string>
+</resources>

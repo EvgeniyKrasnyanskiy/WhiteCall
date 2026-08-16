@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header: Shield status + Toggle Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/widget_status_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_shield"
+            android:contentDescription="@string/app_name" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_status_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/protection_status_active"
+                android:textColor="@color/widget_status_active"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Interactive switch/toggle button -->
+        <ImageButton
+            android:id="@+id/widget_toggle_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_refresh"
+            android:contentDescription="@string/widget_toggle_protection" />
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="#374151" />
+
+    <!-- Counter Blocked Today -->
+    <TextView
+        android:id="@+id/widget_blocked_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_no_blocked_today"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <!-- Last Blocked Caller Info -->
+    <TextView
+        android:id="@+id/widget_last_blocked_caller"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text=""
+        android:textColor="@color/widget_text_secondary"
+        android:textSize="10sp" />
+
+</LinearLayout>
