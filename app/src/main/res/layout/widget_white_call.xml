@@ -7,15 +7,16 @@
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingStart="12dp"
-    android:paddingTop="8dp"
+    android:paddingTop="6dp"
     android:paddingEnd="10dp"
-    android:paddingBottom="8dp">
+    android:paddingBottom="6dp">
 
-    <!-- Left side: Status, Counter & Last Call Info -->
+    <!-- Left side: Status, Counter & Last Call Info (Fills available space) -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:gravity="center_vertical"
         android:orientation="vertical">
 
         <!-- Header: Shield status icon + Name + Compact Counter -->
@@ -33,6 +34,7 @@
                 android:scaleType="centerInside" />
 
             <TextView
+                android:id="@+id/widget_title_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
@@ -77,8 +79,9 @@
 
             <TextView
                 android:id="@+id/widget_status_text"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="@string/protection_status_active"
@@ -91,8 +94,8 @@
     <!-- Right side: Classic Power Button -->
     <ImageButton
         android:id="@+id/widget_toggle_button"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginStart="8dp"
         android:background="@android:color/transparent"
         android:contentDescription="@string/widget_toggle_protection"
