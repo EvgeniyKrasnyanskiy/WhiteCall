@@ -232,20 +232,22 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                     }
                 }
                 TYPE_EXPANDED -> {
-                    // Expanded 3x1..5x1: Line 1 = WhiteCall + Badge, Line 2 = Status or Alert
-                    views.setTextViewText(R.id.widget_blocked_badge, context.getString(R.string.widget_blocked_short, blockedToday))
+                    // Expanded 3x1..5x1: Line 1 = WhiteCall + Status, Line 2 = Alert or "Блок: N"
+                    views.setTextViewText(R.id.widget_status_text, statusText)
+                    views.setTextColor(R.id.widget_status_text, statusColor)
+
                     if (alertCallerDisplay != null) {
                         val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 22, 22)
                         if (phoneBitmap != null) {
                             views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
                         }
                         views.setViewVisibility(R.id.widget_incoming_icon, if (isAlertFlashing) View.VISIBLE else View.INVISIBLE)
-                        views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
-                        views.setTextColor(R.id.widget_status_text, greenColor)
+                        views.setTextViewText(R.id.widget_blocked_badge, alertCallerDisplay)
+                        views.setTextColor(R.id.widget_blocked_badge, greenColor)
                     } else {
                         views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
-                        views.setTextViewText(R.id.widget_status_text, statusText)
-                        views.setTextColor(R.id.widget_status_text, statusColor)
+                        views.setTextViewText(R.id.widget_blocked_badge, context.getString(R.string.widget_blocked_short, blockedToday))
+                        views.setTextColor(R.id.widget_blocked_badge, ContextCompat.getColor(context, R.color.widget_text_secondary))
                     }
                 }
                 TYPE_TALL -> {
@@ -260,7 +262,7 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                     views.setTextViewText(R.id.widget_tall_whitelist_count, "👥 $whiteListCount")
 
                     if (alertCallerDisplay != null) {
-                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 20, 20)
+                        val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 24, 24)
                         if (phoneBitmap != null) {
                             views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
                         }
