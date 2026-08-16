@@ -79,7 +79,6 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                 val isProtectionActive = prefs?.isProtectionCurrentlyActive() ?: false
                 val isScheduleEnabled = prefs?.scheduleSettings?.isEnabled ?: false
                 val blockedCount = callRepo?.getBlockedTodayCount() ?: 0
-                val latestBlocked = callRepo?.getLatestBlockedCall()
 
                 for (widgetId in allWidgetIds) {
                     val compactViews = buildWidgetViews(
@@ -89,7 +88,6 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                         isProtectionActive = isProtectionActive,
                         isScheduleEnabled = isScheduleEnabled,
                         blockedCount = blockedCount,
-                        latestBlocked = latestBlocked,
                         isAlertFlashing = isAlertFlashing,
                         alertCallerDisplay = alertCallerDisplay
                     )
@@ -101,22 +99,22 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                         isProtectionActive = isProtectionActive,
                         isScheduleEnabled = isScheduleEnabled,
                         blockedCount = blockedCount,
-                        latestBlocked = latestBlocked,
                         isAlertFlashing = isAlertFlashing,
                         alertCallerDisplay = alertCallerDisplay
                     )
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val viewsMap = mapOf(
-                            SizeF(80f, 40f) to compactViews,
-                            SizeF(180f, 65f) to expandedViews
+                            SizeF(80f, 40f) to compactViews,    // 2x1
+                            SizeF(80f, 100f) to compactViews,   // 2x2
+                            SizeF(170f, 40f) to expandedViews,  // 3x1, 4x1, 5x1
+                            SizeF(170f, 90f) to expandedViews   // 3x2, 4x2, 5x2
                         )
                         appWidgetManager.updateAppWidget(widgetId, RemoteViews(viewsMap))
                     } else {
                         val options = appWidgetManager.getAppWidgetOptions(widgetId)
                         val minWidth = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH) ?: 0
-                        val minHeight = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT) ?: 0
-                        val chosenViews = if (minWidth < 180 && minHeight < 70) compactViews else expandedViews
+                        val chosenViews = if (minWidth < 170) compactViews else expandedViews
                         appWidgetManager.updateAppWidget(widgetId, chosenViews)
                     }
                 }
@@ -130,7 +128,6 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
             isProtectionActive: Boolean,
             isScheduleEnabled: Boolean,
             blockedCount: Int,
-            latestBlocked: com.whitecall.app.domain.model.BlockedCallLog?,
             isAlertFlashing: Boolean,
             alertCallerDisplay: String?
         ): RemoteViews {
@@ -180,16 +177,6 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                 views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
                 views.setTextViewText(R.id.widget_status_text, alertCallerDisplay)
                 views.setTextColor(R.id.widget_status_text, greenColor)
-            } else if (latestBlocked != null && blockedCount > 0) {
-                val callerDisplay = latestBlocked.callerName ?: latestBlocked.phoneNumber
-                val timeDisplay = PhoneUtils.formatTimeOnly(latestBlocked.timestamp)
-                val phoneBitmap = drawableToBitmap(context, R.drawable.ic_phone_incoming, greenColor, 24, 24)
-                if (phoneBitmap != null) {
-                    views.setImageViewBitmap(R.id.widget_incoming_icon, phoneBitmap)
-                }
-                views.setViewVisibility(R.id.widget_incoming_icon, View.VISIBLE)
-                views.setTextViewText(R.id.widget_status_text, "$callerDisplay • $timeDisplay")
-                views.setTextColor(R.id.widget_status_text, ContextCompat.getColor(context, R.color.widget_text_secondary))
             } else {
                 views.setViewVisibility(R.id.widget_incoming_icon, View.GONE)
                 if (isCompact) {

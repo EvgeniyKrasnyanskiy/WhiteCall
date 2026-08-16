@@ -42,10 +42,11 @@ class WhiteCallScreeningService : CallScreeningService() {
                     val blockMode = app.preferences.blockMode
                     val response = if (blockMode == com.whitecall.app.data.preferences.AppPreferences.BLOCK_MODE_SILENCE) {
                         CallResponse.Builder()
-                            .setDisallowCall(false)
-                            .setSilenceCall(true)
-                            .setSkipCallLog(true)
-                            .setSkipNotification(true)
+                            .setDisallowCall(true)     // Disallow call from routing to dialer / InCallService
+                            .setRejectCall(false)      // Do NOT send busy reject to carrier
+                            .setSilenceCall(true)      // Silence completely
+                            .setSkipCallLog(true)      // Suppress from native phone dialer history
+                            .setSkipNotification(true) // Suppress heads-up notification and screen wake
                             .build()
                     } else {
                         CallResponse.Builder()
