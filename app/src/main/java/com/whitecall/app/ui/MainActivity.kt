@@ -4,9 +4,9 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,8 +26,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -42,6 +46,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.whitecall.app.R
 import com.whitecall.app.WhiteCallApplication
+import com.whitecall.app.ui.components.OnboardingWizardDialog
 import com.whitecall.app.ui.history.BlockedLogScreen
 import com.whitecall.app.ui.navigation.NavDestination
 import com.whitecall.app.ui.settings.SettingsScreen
@@ -51,50 +56,48 @@ import com.whitecall.app.ui.theme.StatusScheduled
 import com.whitecall.app.ui.theme.WhiteCallTheme
 import com.whitecall.app.ui.whitelist.WhiteListScreen
 import com.whitecall.app.util.LocaleHelper
+import com.whitecall.app.util.PermissionHelper
 
 class MainActivity : AppCompatActivity() {
-
-    private val permissionRequestLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) {
-        // Permissions granted/denied handled gracefully
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Apply saved locale
         val app = application as WhiteCallApplication
         LocaleHelper.applyLanguage(app.preferences.appLanguage)
 
-        // Request runtime permissions
-        requestRequiredPermissions()
-
         setContent {
             val appTheme by app.preferences.appThemeFlow.collectAsState()
+            val appLanguage by app.preferences.appLanguageFlow.collectAsState()
+
+            // Reactively update locale when changed in settings
+            LaunchedEffect(appLanguage) {
+                LocaleHelper.applyLanguage(appLanguage)
+            }
+
             val darkTheme = when (appTheme) {
                 "dark" -> true
                 "light" -> false
-                else -> androidx.compose.foundation.isSystemInDarkTheme()
+                else -> isSystemInDarkTheme()
             }
-            WhiteCallTheme(darkTheme = darkTheme) {
-                MainScreen(app = app)
-            }
-        }
-    }
 
-    private fun requestRequiredPermissions() {
-        val permissions = mutableListOf(
-            android.Manifest.permission.READ_PHONE_STATE,
-            android.Manifest.permission.READ_CONTACTS
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            permissions.add(android.Manifest.permission.ANSWER_PHONE_CALLS)
+            WhiteCallTheme(darkTheme = darkTheme) {
+                var showOnboarding by remember {
+                    mutableStateOf(!app.preferences.isOnboardingCompleted && !PermissionHelper.isCallScreeningRoleHeld(this@MainActivity))
+                }
+
+                MainScreen(app = app)
+
+                if (showOnboarding) {
+                    OnboardingWizardDialog(
+                        onDismiss = {
+                            app.preferences.isOnboardingCompleted = true
+                            showOnboarding = false
+                        }
+                    )
+                }
+            }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
-        }
-        permissionRequestLauncher.launch(permissions.toTypedArray())
     }
 }
 

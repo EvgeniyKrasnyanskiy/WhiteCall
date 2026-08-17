@@ -153,4 +153,15 @@
     <string name="dialog_delete_folder_msg">Delete this folder and all numbers inside it?</string>
     <string name="dialog_clear_history_title">Clear History?</string>
     <string name="dialog_clear_history_msg">All blocked call logs will be permanently deleted.</string>
+    <string name="banner_call_screening_warning_title">Call Screening is Disabled!</string>
+    <string name="banner_call_screening_warning_desc">The app cannot block unwanted calls until set as the default call screening service.</string>
+    <string name="btn_enable_screening">Enable Service</string>
+    <string name="wizard_step_contacts_title">Step 1 of 3: Contacts</string>
+    <string name="wizard_step_contacts_desc">Allow contacts access so WhiteCall automatically permits incoming calls from your phonebook.</string>
+    <string name="wizard_step_phone_title">Step 2 of 3: Phone Access</string>
+    <string name="wizard_step_phone_desc">Required to identify incoming caller numbers and update widget alerts.</string>
+    <string name="wizard_step_screening_title">Step 3 of 3: Call Screening</string>
+    <string name="wizard_step_screening_desc">Main step. Set WhiteCall as your default call screening service so it can silently and instantly block calls not in your whitelist.</string>
+    <string name="btn_skip">Skip</string>
+    <string name="btn_next">Next</string>
 </resources>

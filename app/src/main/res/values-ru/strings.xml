@@ -153,4 +153,15 @@
     <string name="dialog_delete_folder_msg">Удалить эту папку и все сохраненные в ней номера?</string>
     <string name="dialog_clear_history_title">Очистить журнал?</string>
     <string name="dialog_clear_history_msg">Все записи заблокированных вызовов будут удалены без возможности восстановления.</string>
+    <string name="banner_call_screening_warning_title">Служба фильтрации выключена!</string>
+    <string name="banner_call_screening_warning_desc">Приложение не сможет блокировать вызовы, пока не выбрано системной службой фильтрации.</string>
+    <string name="btn_enable_screening">Включить службу</string>
+    <string name="wizard_step_contacts_title">Шаг 1 из 3: Контакты</string>
+    <string name="wizard_step_contacts_desc">Разрешите доступ к контактам, чтобы WhiteCall автоматически пропускал звонки от близких и знакомых из телефонной книги.</string>
+    <string name="wizard_step_phone_title">Шаг 2 из 3: Доступ к телефону</string>
+    <string name="wizard_step_phone_desc">Необходимо для определения номера звонящего и работы оповещений на виджете.</string>
+    <string name="wizard_step_screening_title">Шаг 3 из 3: Фильтрация звонков</string>
+    <string name="wizard_step_screening_desc">Главный шаг. Выберите WhiteCall в качестве службы фильтрации по умолчанию, чтобы приложение могло бесшумно и мгновенно сбрасывать звонки не из белого списка.</string>
+    <string name="btn_skip">Пропустить</string>
+    <string name="btn_next">Далее</string>
 </resources>

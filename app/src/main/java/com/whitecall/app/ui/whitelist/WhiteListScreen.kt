@@ -1,7 +1,9 @@
 package com.whitecall.app.ui.whitelist
 
 import android.app.Activity
+import android.app.role.RoleManager
 import android.content.Intent
+import android.os.Build
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,8 +38,10 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -65,6 +69,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -81,6 +86,7 @@ import com.whitecall.app.ui.components.PermissionRationaleDialog
 import com.whitecall.app.ui.theme.StatusActive
 import com.whitecall.app.ui.theme.StatusInactive
 import com.whitecall.app.util.ContactHelper
+import com.whitecall.app.util.PermissionHelper
 import kotlinx.coroutines.launch
 
 @Composable
@@ -107,10 +113,20 @@ fun WhiteListScreen(
 
     var targetGroupIdForContactPicker by remember { mutableStateOf<Long?>(null) }
 
+    var isRoleHeld by remember {
+        mutableStateOf(PermissionHelper.isCallScreeningRoleHeld(context))
+    }
+
+    val roleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        isRoleHeld = PermissionHelper.isCallScreeningRoleHeld(context)
+    }
+
     val switchColors = SwitchDefaults.colors(
         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
         checkedTrackColor = MaterialTheme.colorScheme.primary,
-        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+        uncheckedThumbColor = Color(0xFFCBD5E1), // Visible bright circle thumb in dark/light mode
         uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
         uncheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
     )
@@ -205,6 +221,66 @@ fun WhiteListScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            // Warning Banner if Call Screening is not set as default
+            if (!isRoleHeld) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.banner_call_screening_warning_title),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = stringResource(R.string.banner_call_screening_warning_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    val roleManager = context.getSystemService(RoleManager::class.java)
+                                    val intent = roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                                    if (intent != null) {
+                                        roleLauncher.launch(intent)
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(stringResource(R.string.btn_enable_screening), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
             // 1. Search Bar
             OutlinedTextField(
                 value = searchQuery,
@@ -594,7 +670,7 @@ fun FolderCardItem(
                     colors = switchColors ?: SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                        uncheckedThumbColor = Color(0xFFCBD5E1),
                         uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                         uncheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
                     )

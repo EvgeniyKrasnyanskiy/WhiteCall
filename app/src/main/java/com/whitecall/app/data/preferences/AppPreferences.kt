@@ -104,6 +104,12 @@ class AppPreferences(context: Context) {
             _blockModeFlow.value = value
         }
 
+    var isOnboardingCompleted: Boolean
+        get() = prefs.getBoolean(KEY_ONBOARDING_COMPLETED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, value).apply()
+        }
+
     /**
      * Determine if call protection is currently active:
      * - If schedule is enabled, check if current time is inside schedule window.
@@ -134,5 +140,6 @@ class AppPreferences(context: Context) {
         private const val KEY_APP_LANGUAGE = "key_app_language"
         private const val KEY_APP_THEME = "key_app_theme"
         private const val KEY_BLOCK_MODE = "key_block_mode"
+        private const val KEY_ONBOARDING_COMPLETED = "key_onboarding_completed"
     }
 }
