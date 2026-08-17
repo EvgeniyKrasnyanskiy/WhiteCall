@@ -99,9 +99,11 @@
     <string name="lang_en">English</string>
     <string name="lang_ru">Русский</string>
 
-    <string name="section_backup">Резервное копирование</string>
+    <string name="section_backup">Резервное копирование списка</string>
     <string name="btn_export_json">Экспорт белого списка (JSON)</string>
     <string name="btn_import_json">Импорт белого списка (JSON)</string>
+    <string name="btn_export_short">Экспорт</string>
+    <string name="btn_import_short">Импорт</string>
     <string name="msg_export_success">Белый список успешно экспортирован</string>
     <string name="msg_import_success">Импортировано %1$d номеров</string>
     <string name="msg_import_error">Ошибка чтения файла JSON</string>

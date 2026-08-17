@@ -50,6 +50,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -59,12 +60,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.whitecall.app.BuildConfig
 import com.whitecall.app.R
@@ -87,7 +92,6 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val isProtectionEnabled by viewModel.isProtectionEnabled.collectAsState()
     val scheduleSettings by viewModel.scheduleSettings.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
 
@@ -98,10 +102,24 @@ fun SettingsScreen(
     var faqPermissionsExpanded by remember { mutableStateOf(false) }
     var faqOemExpanded by remember { mutableStateOf(false) }
 
-    // Role Manager Launcher
+    // Role Manager Launcher & Lifecycle refresh
     var isRoleHeld by remember {
         mutableStateOf(PermissionHelper.isCallScreeningRoleHeld(context))
     }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                isRoleHeld = PermissionHelper.isCallScreeningRoleHeld(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val roleLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
@@ -155,7 +173,7 @@ fun SettingsScreen(
     val switchColors = SwitchDefaults.colors(
         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
         checkedTrackColor = MaterialTheme.colorScheme.primary,
-        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+        uncheckedThumbColor = Color(0xFFCBD5E1),
         uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
         uncheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
     )
@@ -239,50 +257,9 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 2. Protection Master Switch
-            SectionHeader(title = stringResource(R.string.section_protection))
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.protection_master_switch),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = stringResource(R.string.protection_master_switch_desc),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Switch(
-                        checked = isProtectionEnabled,
-                        onCheckedChange = { viewModel.setProtectionEnabled(context, it) },
-                        colors = switchColors
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Block Mode Selector (Reject vs Silence)
+            // 2. Block Mode Selector (Reject vs Silence)
             val currentBlockMode by viewModel.blockMode.collectAsState()
             Card(
                 modifier = Modifier
@@ -607,7 +584,56 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 6. App Updates Section (GitHub Releases)
+            // 6. List Backup & Restore (2 Compact buttons in 1 row)
+            SectionHeader(title = stringResource(R.string.section_backup))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { exportLauncher.launch("whitecall_backup.json") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_export),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.btn_export_short))
+                    }
+
+                    OutlinedButton(
+                        onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_import),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.btn_import_short))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 7. App Updates Section (GitHub Releases) - placed right after Backup
             SectionHeader(title = stringResource(R.string.section_updates))
             Card(
                 modifier = Modifier
@@ -651,55 +677,6 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                         }
                         Text(stringResource(R.string.btn_check_updates))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 7. Backup & Restore
-            SectionHeader(title = stringResource(R.string.section_backup))
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { exportLauncher.launch("whitecall_backup.json") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_export),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.btn_export_json))
-                    }
-
-                    OutlinedButton(
-                        onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_import),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.btn_import_json))
                     }
                 }
             }

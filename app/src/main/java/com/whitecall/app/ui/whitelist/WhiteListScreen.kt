@@ -8,6 +8,10 @@ import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +32,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
@@ -37,7 +40,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,6 +63,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,12 +74,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.whitecall.app.R
 import com.whitecall.app.domain.model.GroupItem
@@ -99,7 +105,7 @@ fun WhiteListScreen(
 
     val folders by viewModel.folderList.collectAsState()
     val expandedGroupIds by viewModel.expandedGroupIds.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
+    val isProtectionEnabled by viewModel.isProtectionEnabled.collectAsState()
     val allowAllContacts by viewModel.allowAllContacts.collectAsState()
 
     var showFabMenu by remember { mutableStateOf(false) }
@@ -117,10 +123,10 @@ fun WhiteListScreen(
         mutableStateOf(PermissionHelper.isCallScreeningRoleHeld(context))
     }
 
-    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
-    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
                 isRoleHeld = PermissionHelper.isCallScreeningRoleHeld(context)
             }
         }
@@ -139,7 +145,7 @@ fun WhiteListScreen(
     val switchColors = SwitchDefaults.colors(
         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
         checkedTrackColor = MaterialTheme.colorScheme.primary,
-        uncheckedThumbColor = Color(0xFFCBD5E1), // Visible bright circle thumb in dark/light mode
+        uncheckedThumbColor = Color(0xFFCBD5E1),
         uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
         uncheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
     )
@@ -234,11 +240,11 @@ fun WhiteListScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Warning Banner if Call Screening is not set as default (smooth animated appearance/exit)
-            androidx.compose.animation.AnimatedVisibility(
+            // 1. Warning Banner if Call Screening is not set as default
+            AnimatedVisibility(
                 visible = !isRoleHeld,
-                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
-                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
             ) {
                 Card(
                     modifier = Modifier
@@ -298,27 +304,45 @@ fun WhiteListScreen(
                 }
             }
 
-            // 1. Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.onSearchQueryChanged(it) },
+            // 2. Master Call Protection Switch Card
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                placeholder = { Text(stringResource(R.string.whitelist_search_hint)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = null)
-                        }
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.protection_master_switch),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.protection_master_switch_desc),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp)
-            )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Switch(
+                        checked = isProtectionEnabled,
+                        onCheckedChange = { viewModel.setProtectionEnabled(context, it) },
+                        colors = switchColors
+                    )
+                }
+            }
 
-            // 2. Allow All Contacts Card
+            // 3. Allow All Contacts Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -361,11 +385,10 @@ fun WhiteListScreen(
                 }
             }
 
-            // 3. Folders List or Empty State
+            // 4. Folders List or Empty State
             val totalContactsCount = folders.sumOf { it.entries.size }
             if (folders.isEmpty() || totalContactsCount == 0) {
                 if (allowAllContacts) {
-                    // Informative card when contacts are allowed
                     EmptyStateView(
                         iconRes = R.drawable.ic_contact,
                         title = stringResource(R.string.whitelist_contacts_allowed_title),
@@ -373,7 +396,6 @@ fun WhiteListScreen(
                         modifier = Modifier.weight(1f)
                     )
                 } else {
-                    // Standard empty view
                     EmptyStateView(
                         iconRes = R.drawable.ic_shield,
                         title = stringResource(R.string.whitelist_empty_title),

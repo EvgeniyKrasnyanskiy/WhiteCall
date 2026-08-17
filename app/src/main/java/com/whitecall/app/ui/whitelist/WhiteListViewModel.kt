@@ -32,6 +32,12 @@ class WhiteListViewModel(
     val expandedGroupIds: StateFlow<Set<Long>> = _expandedGroupIds.asStateFlow()
 
     val allowAllContacts: StateFlow<Boolean> = preferences.allowAllContactsFlow
+    val isProtectionEnabled: StateFlow<Boolean> = preferences.protectionEnabledFlow
+
+    fun setProtectionEnabled(context: android.content.Context, enabled: Boolean) {
+        preferences.isProtectionEnabled = enabled
+        com.whitecall.app.widget.WhiteCallWidgetProvider.updateAllWidgets(context)
+    }
 
     val groups: StateFlow<List<GroupItem>> = repository.getAllGroupsFlow()
         .stateIn(
