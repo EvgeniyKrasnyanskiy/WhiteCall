@@ -203,7 +203,7 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Default.Security,
                         contentDescription = null,
-                        tint = if (isRoleHeld) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        tint = if (isRoleHeld) StatusActive else MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -213,13 +213,15 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isRoleHeld) stringResource(R.string.screening_role_active_desc) else stringResource(R.string.screening_role_inactive_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isRoleHeld) StatusActive else MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Medium
-                        )
+                        if (!isRoleHeld) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.screening_role_inactive_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     if (!isRoleHeld) {
