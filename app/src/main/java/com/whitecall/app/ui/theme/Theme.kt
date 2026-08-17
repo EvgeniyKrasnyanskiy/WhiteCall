@@ -2,6 +2,7 @@ package com.whitecall.app.ui.theme
 
 import android.app.Activity
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -54,17 +55,18 @@ fun WhiteCallTheme(
     content: @Composable () -> Unit
 ) {
     val targetColors = if (darkTheme) DarkColorScheme else LightColorScheme
+    val animationSpec = tween<androidx.compose.ui.graphics.Color>(durationMillis = 200, easing = FastOutSlowInEasing)
 
-    val animatedPrimary by animateColorAsState(targetColors.primary, tween(350), label = "primary")
-    val animatedBackground by animateColorAsState(targetColors.background, tween(350), label = "background")
-    val animatedSurface by animateColorAsState(targetColors.surface, tween(350), label = "surface")
-    val animatedSurfaceVariant by animateColorAsState(targetColors.surfaceVariant, tween(350), label = "surfaceVariant")
-    val animatedOnBackground by animateColorAsState(targetColors.onBackground, tween(350), label = "onBackground")
-    val animatedOnSurface by animateColorAsState(targetColors.onSurface, tween(350), label = "onSurface")
-    val animatedOnSurfaceVariant by animateColorAsState(targetColors.onSurfaceVariant, tween(350), label = "onSurfaceVariant")
-    val animatedOutline by animateColorAsState(targetColors.outline, tween(350), label = "outline")
-    val animatedPrimaryContainer by animateColorAsState(targetColors.primaryContainer, tween(350), label = "primaryContainer")
-    val animatedOnPrimaryContainer by animateColorAsState(targetColors.onPrimaryContainer, tween(350), label = "onPrimaryContainer")
+    val animatedPrimary by animateColorAsState(targetColors.primary, animationSpec, label = "primary")
+    val animatedBackground by animateColorAsState(targetColors.background, animationSpec, label = "background")
+    val animatedSurface by animateColorAsState(targetColors.surface, animationSpec, label = "surface")
+    val animatedSurfaceVariant by animateColorAsState(targetColors.surfaceVariant, animationSpec, label = "surfaceVariant")
+    val animatedOnBackground by animateColorAsState(targetColors.onBackground, animationSpec, label = "onBackground")
+    val animatedOnSurface by animateColorAsState(targetColors.onSurface, animationSpec, label = "onSurface")
+    val animatedOnSurfaceVariant by animateColorAsState(targetColors.onSurfaceVariant, animationSpec, label = "onSurfaceVariant")
+    val animatedOutline by animateColorAsState(targetColors.outline, animationSpec, label = "outline")
+    val animatedPrimaryContainer by animateColorAsState(targetColors.primaryContainer, animationSpec, label = "primaryContainer")
+    val animatedOnPrimaryContainer by animateColorAsState(targetColors.onPrimaryContainer, animationSpec, label = "onPrimaryContainer")
 
     val colorScheme = targetColors.copy(
         primary = animatedPrimary,
@@ -84,7 +86,7 @@ fun WhiteCallTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             if (window != null) {
-                window.statusBarColor = colorScheme.background.toArgb()
+                window.statusBarColor = targetColors.background.toArgb()
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             }
         }

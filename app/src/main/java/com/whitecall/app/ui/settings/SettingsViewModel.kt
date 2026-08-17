@@ -49,6 +49,7 @@ class SettingsViewModel(
 
     fun setAppLanguage(languageCode: String) {
         preferences.appLanguage = languageCode
+        com.whitecall.app.util.LocaleHelper.applyLanguage(languageCode)
     }
 
     fun setAppTheme(themeCode: String) {
