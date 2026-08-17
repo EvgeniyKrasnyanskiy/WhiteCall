@@ -58,6 +58,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import com.whitecall.app.ui.components.AppSnackbarHost
+import com.whitecall.app.ui.components.showCustomSnackbar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -166,9 +168,10 @@ fun WhiteListScreen(
                 val picked = ContactHelper.extractContactFromUri(context, uri)
                 if (picked != null) {
                     viewModel.addContactNumber(picked.name, picked.phoneNumber, targetGroupIdForContactPicker)
-                    scope.launch {
-                        snackbarHostState.showSnackbar(context.getString(R.string.msg_number_added))
-                    }
+                    scope.showCustomSnackbar(
+                        snackbarHostState,
+                        context.getString(R.string.msg_number_added)
+                    )
                 }
             }
         }
@@ -185,7 +188,7 @@ fun WhiteListScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { com.whitecall.app.ui.components.AppSnackbarHost(snackbarHostState) },
         floatingActionButton = {
             Box {
                 FloatingActionButton(
@@ -443,9 +446,7 @@ fun WhiteListScreen(
                             },
                             onDeleteEntry = { entryId ->
                                 viewModel.deleteEntry(entryId)
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(context.getString(R.string.msg_number_deleted))
-                                }
+                                scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_number_deleted))
                             }
                         )
                     }
@@ -523,18 +524,14 @@ fun WhiteListScreen(
                                 viewModel.moveEntryToNewGroup(entry.id, newFolderNameInput) {
                                     val groupName = newFolderNameInput
                                     showMoveContactDialog = null
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.msg_contact_moved, groupName))
-                                    }
+                                    scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_contact_moved, groupName))
                                 }
                             }
                         } else {
                             viewModel.moveEntryToGroup(entry.id, selectedGroupId)
                             val targetName = allGroups.firstOrNull { it.id == selectedGroupId }?.name ?: ""
                             showMoveContactDialog = null
-                            scope.launch {
-                                snackbarHostState.showSnackbar(context.getString(R.string.msg_contact_moved, targetName))
-                            }
+                            scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_contact_moved, targetName))
                         }
                     }
                 ) {
@@ -597,9 +594,7 @@ fun WhiteListScreen(
                                 groupId = targetGroupIdForManualAdd,
                                 onSuccess = {
                                     showManualAddDialog = false
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.msg_number_added))
-                                    }
+                                    scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_number_added))
                                 },
                                 onError = { isError = true }
                             )
@@ -639,9 +634,7 @@ fun WhiteListScreen(
                         if (groupNameInput.isNotBlank()) {
                             viewModel.addGroup(groupNameInput) {
                                 showAddGroupDialog = false
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(context.getString(R.string.msg_group_created))
-                                }
+                                scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_group_created))
                             }
                         }
                     }
@@ -680,9 +673,7 @@ fun WhiteListScreen(
                         if (groupNameInput.isNotBlank()) {
                             viewModel.updateGroup(group.id, groupNameInput, group.isActive)
                             showEditGroupDialog = null
-                            scope.launch {
-                                snackbarHostState.showSnackbar(context.getString(R.string.msg_group_updated))
-                            }
+                            scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_group_updated))
                         }
                     }
                 ) {
@@ -709,9 +700,7 @@ fun WhiteListScreen(
                     onClick = {
                         viewModel.deleteGroup(group.id)
                         showDeleteGroupDialog = null
-                        scope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.msg_group_deleted))
-                        }
+                        scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_group_deleted))
                     }
                 ) {
                     Text(stringResource(R.string.btn_delete), color = MaterialTheme.colorScheme.error)

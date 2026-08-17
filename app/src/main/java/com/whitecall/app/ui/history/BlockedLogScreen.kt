@@ -48,7 +48,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.whitecall.app.R
 import com.whitecall.app.domain.model.BlockedCallLog
+import com.whitecall.app.ui.components.AppSnackbarHost
 import com.whitecall.app.ui.components.EmptyStateView
+import com.whitecall.app.ui.components.showCustomSnackbar
 import com.whitecall.app.util.PhoneUtils
 import kotlinx.coroutines.launch
 
@@ -64,7 +66,7 @@ fun BlockedLogScreen(
     var showClearDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { AppSnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -118,11 +120,10 @@ fun BlockedLogScreen(
                             item = item,
                             onAddToWhiteList = {
                                 viewModel.addToWhiteList(item.log.phoneNumber, item.log.callerName) {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            context.getString(R.string.msg_number_added)
-                                        )
-                                    }
+                                    scope.showCustomSnackbar(
+                                        snackbarHostState,
+                                        context.getString(R.string.msg_number_added)
+                                    )
                                 }
                             }
                         )

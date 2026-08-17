@@ -177,11 +177,7 @@ fun OnboardingWizardDialog(
                             }
                         }
                         2 -> {
-                            val perms = mutableListOf(android.Manifest.permission.READ_PHONE_STATE)
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                perms.add(android.Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                            phonePermissionsLauncher.launch(perms.toTypedArray())
+                            phonePermissionsLauncher.launch(arrayOf(android.Manifest.permission.READ_PHONE_STATE))
                         }
                         3 -> {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

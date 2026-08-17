@@ -73,8 +73,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.whitecall.app.BuildConfig
 import com.whitecall.app.R
+import com.whitecall.app.ui.components.AppSnackbarHost
 import com.whitecall.app.ui.components.AppTimePickerDialog
 import com.whitecall.app.ui.components.SectionHeader
+import com.whitecall.app.ui.components.showCustomSnackbar
 import com.whitecall.app.ui.theme.StatusActive
 import com.whitecall.app.ui.theme.StatusInactive
 import com.whitecall.app.util.PermissionHelper
@@ -135,14 +137,16 @@ fun SettingsScreen(
                 context = context,
                 uri = uri,
                 onSuccess = { count ->
-                    scope.launch {
-                        snackbarHostState.showSnackbar(context.getString(R.string.msg_export_success, count))
-                    }
+                    scope.showCustomSnackbar(
+                        snackbarHostState,
+                        context.getString(R.string.msg_export_success, count)
+                    )
                 },
                 onError = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(context.getString(R.string.msg_export_error))
-                    }
+                    scope.showCustomSnackbar(
+                        snackbarHostState,
+                        context.getString(R.string.msg_export_error)
+                    )
                 }
             )
         }
@@ -157,14 +161,16 @@ fun SettingsScreen(
                 context = context,
                 uri = uri,
                 onSuccess = { count ->
-                    scope.launch {
-                        snackbarHostState.showSnackbar(context.getString(R.string.msg_import_success, count))
-                    }
+                    scope.showCustomSnackbar(
+                        snackbarHostState,
+                        context.getString(R.string.msg_import_success, count)
+                    )
                 },
                 onError = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(context.getString(R.string.msg_import_error))
-                    }
+                    scope.showCustomSnackbar(
+                        snackbarHostState,
+                        context.getString(R.string.msg_import_error)
+                    )
                 }
             )
         }
@@ -179,7 +185,7 @@ fun SettingsScreen(
     )
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { AppSnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -751,14 +757,14 @@ fun SettingsScreen(
                 )
             } else {
                 LaunchedEffect(state) {
-                    snackbarHostState.showSnackbar(context.getString(R.string.msg_no_updates, BuildConfig.VERSION_NAME))
+                    scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_no_updates, BuildConfig.VERSION_NAME))
                     viewModel.dismissUpdateDialog()
                 }
             }
         }
         is UpdateUiState.Error -> {
             LaunchedEffect(state) {
-                snackbarHostState.showSnackbar("Ошибка проверки: ${state.message}")
+                scope.showCustomSnackbar(snackbarHostState, "Ошибка проверки: ${state.message}")
                 viewModel.dismissUpdateDialog()
             }
         }

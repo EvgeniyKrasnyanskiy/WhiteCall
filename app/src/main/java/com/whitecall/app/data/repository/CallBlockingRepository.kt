@@ -13,6 +13,11 @@ class CallBlockingRepository(
     private val preferences: AppPreferences
 ) {
 
+    @Volatile
+    private var lastBlockedPhone: String? = null
+    @Volatile
+    private var lastBlockedTimestamp: Long = 0L
+
     fun getAllBlockedCallsFlow(): Flow<List<BlockedCallLog>> {
         return blockedCallDao.getAllBlockedCallsFlow().map { list ->
             list.map { it.toDomain() }
@@ -28,10 +33,20 @@ class CallBlockingRepository(
         callerName: String?,
         reason: String = "NOT_IN_WHITELIST"
     ): Long {
+        val now = System.currentTimeMillis()
+        // Deduplication guard: ignore duplicate triggers within 2.5s for the same number
+        synchronized(this) {
+            if (phoneNumber == lastBlockedPhone && (now - lastBlockedTimestamp) < 2500L) {
+                return -1L
+            }
+            lastBlockedPhone = phoneNumber
+            lastBlockedTimestamp = now
+        }
+
         val entity = BlockedCallEntity(
             phoneNumber = phoneNumber,
             callerName = callerName,
-            timestamp = System.currentTimeMillis(),
+            timestamp = now,
             reason = reason
         )
         val id = blockedCallDao.insert(entity)
@@ -61,6 +76,10 @@ class CallBlockingRepository(
     }
 
     suspend fun clearLog() {
+        synchronized(this) {
+            lastBlockedPhone = null
+            lastBlockedTimestamp = 0L
+        }
         blockedCallDao.deleteAll()
     }
 
