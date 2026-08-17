@@ -1,9 +1,6 @@
 package com.whitecall.app.ui.settings
 
-import android.app.Activity
 import android.app.role.RoleManager
-import android.content.Context
-import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,9 +28,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -47,6 +48,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,11 +66,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.whitecall.app.BuildConfig
 import com.whitecall.app.R
 import com.whitecall.app.ui.components.AppTimePickerDialog
 import com.whitecall.app.ui.components.SectionHeader
 import com.whitecall.app.ui.theme.StatusActive
 import com.whitecall.app.ui.theme.StatusInactive
+import com.whitecall.app.util.PermissionHelper
+import com.whitecall.app.util.UpdateChecker
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
@@ -84,63 +89,76 @@ fun SettingsScreen(
 
     val isProtectionEnabled by viewModel.isProtectionEnabled.collectAsState()
     val scheduleSettings by viewModel.scheduleSettings.collectAsState()
-    val appLanguage by viewModel.appLanguage.collectAsState()
-    val isRoleHeld by viewModel.isRoleHeld.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
-    // FAQ expand states
     var faqHowItWorksExpanded by remember { mutableStateOf(false) }
     var faqPermissionsExpanded by remember { mutableStateOf(false) }
     var faqOemExpanded by remember { mutableStateOf(false) }
 
     // Role Manager Launcher
+    var isRoleHeld by remember {
+        mutableStateOf(PermissionHelper.isCallScreeningRoleHeld(context))
+    }
     val roleLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
-        viewModel.checkCallScreeningRole(context)
+        isRoleHeld = PermissionHelper.isCallScreeningRoleHeld(context)
     }
 
-    // Export JSON Launcher
+    // JSON Export Launcher
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
-            viewModel.exportToJson(context, uri) { success ->
-                scope.launch {
-                    val msg = if (success) {
-                        context.getString(R.string.msg_export_success)
-                    } else {
-                        context.getString(R.string.msg_import_error)
+            viewModel.exportBackup(
+                context = context,
+                uri = uri,
+                onSuccess = { count ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.msg_export_success, count))
                     }
-                    snackbarHostState.showSnackbar(msg)
+                },
+                onError = {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.msg_export_error))
+                    }
                 }
-            }
+            )
         }
     }
 
-    // Import JSON Launcher
+    // JSON Import Launcher
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
-            viewModel.importFromJson(context, uri) { count ->
-                scope.launch {
-                    val msg = if (count >= 0) {
-                        context.getString(R.string.msg_import_success, count)
-                    } else {
-                        context.getString(R.string.msg_import_error)
+            viewModel.importBackup(
+                context = context,
+                uri = uri,
+                onSuccess = { count ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.msg_import_success, count))
                     }
-                    snackbarHostState.showSnackbar(msg)
+                },
+                onError = {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.msg_import_error))
+                    }
                 }
-            }
+            )
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.checkCallScreeningRole(context)
-    }
+    val switchColors = SwitchDefaults.colors(
+        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+        checkedTrackColor = MaterialTheme.colorScheme.primary,
+        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        uncheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+    )
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -152,15 +170,15 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 24.dp)
         ) {
-            // 1. System Integration / Role Card
-            SectionHeader(title = stringResource(R.string.section_system_role))
+            // 1. Call Screening Permission Card
+            SectionHeader(title = stringResource(R.string.section_permissions))
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -257,12 +275,7 @@ fun SettingsScreen(
                     Switch(
                         checked = isProtectionEnabled,
                         onCheckedChange = { viewModel.setProtectionEnabled(context, it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        colors = switchColors
                     )
                 }
             }
@@ -348,7 +361,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 3. Theme Selector
+            // 3. Compact 1-Row Theme Selector (Dark vs Light)
             val appTheme by viewModel.appTheme.collectAsState()
             SectionHeader(title = stringResource(R.string.section_theme))
             Card(
@@ -360,37 +373,97 @@ fun SettingsScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    val themes = listOf(
-                        "system" to R.string.theme_system,
-                        "dark" to R.string.theme_dark,
-                        "light" to R.string.theme_light
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    val isDark = appTheme != "light"
+                    FilterChip(
+                        selected = isDark,
+                        onClick = { viewModel.setAppTheme("dark") },
+                        label = { Text(stringResource(R.string.theme_dark), modifier = Modifier.padding(vertical = 2.dp)) },
+                        leadingIcon = if (isDark) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     )
-                    themes.forEach { (code, nameRes) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.setAppTheme(code) }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = appTheme == code,
-                                onClick = { viewModel.setAppTheme(code) }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(nameRes),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                    }
+
+                    FilterChip(
+                        selected = !isDark,
+                        onClick = { viewModel.setAppTheme("light") },
+                        label = { Text(stringResource(R.string.theme_light), modifier = Modifier.padding(vertical = 2.dp)) },
+                        leadingIcon = if (!isDark) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 4. Schedule Mode
+            // 4. Compact 1-Row Language Selector (Русский vs English)
+            val appLanguage by viewModel.appLanguage.collectAsState()
+            SectionHeader(title = stringResource(R.string.section_language))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    val isRu = appLanguage != "en"
+                    FilterChip(
+                        selected = isRu,
+                        onClick = { viewModel.setAppLanguage("ru") },
+                        label = { Text(stringResource(R.string.lang_ru), modifier = Modifier.padding(vertical = 2.dp)) },
+                        leadingIcon = if (isRu) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+
+                    FilterChip(
+                        selected = !isRu,
+                        onClick = { viewModel.setAppLanguage("en") },
+                        label = { Text(stringResource(R.string.lang_en), modifier = Modifier.padding(vertical = 2.dp)) },
+                        leadingIcon = if (!isRu) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 5. Schedule Mode
             SectionHeader(title = stringResource(R.string.section_schedule))
             Card(
                 modifier = Modifier
@@ -428,12 +501,7 @@ fun SettingsScreen(
                                     scheduleSettings.copy(isEnabled = it)
                                 )
                             },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                            colors = switchColors
                         )
                     }
 
@@ -539,8 +607,8 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 4. Language Selector
-            SectionHeader(title = stringResource(R.string.section_language))
+            // 6. App Updates Section (GitHub Releases)
+            SectionHeader(title = stringResource(R.string.section_updates))
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -550,37 +618,46 @@ fun SettingsScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    val languages = listOf(
-                        "system" to R.string.lang_system,
-                        "en" to R.string.lang_en,
-                        "ru" to R.string.lang_ru
-                    )
-                    languages.forEach { (code, nameRes) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.setAppLanguage(code) }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = appLanguage == code,
-                                onClick = { viewModel.setAppLanguage(code) }
-                            )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "WhiteCall",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.version_label, BuildConfig.VERSION_NAME),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = { viewModel.checkForUpdates() },
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = updateState !is UpdateUiState.Checking
+                    ) {
+                        if (updateState is UpdateUiState.Checking) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(nameRes),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                         }
+                        Text(stringResource(R.string.btn_check_updates))
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 5. Backup & Restore
+            // 7. Backup & Restore
             SectionHeader(title = stringResource(R.string.section_backup))
             Card(
                 modifier = Modifier
@@ -629,7 +706,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 6. Quick Help & FAQ Accordions
+            // 8. Quick Help & FAQ Accordions
             SectionHeader(title = stringResource(R.string.section_faq))
 
             FaqAccordionItem(
@@ -653,6 +730,62 @@ fun SettingsScreen(
                 onToggle = { faqOemExpanded = !faqOemExpanded }
             )
         }
+    }
+
+    // Update Result Dialog / Snackbar
+    when (val state = updateState) {
+        is UpdateUiState.Success -> {
+            if (state.info.hasUpdate) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissUpdateDialog() },
+                    title = { Text(stringResource(R.string.dialog_update_title, state.info.latestVersion)) },
+                    text = {
+                        Column {
+                            if (state.info.releaseNotes.isNotBlank()) {
+                                Text(
+                                    text = state.info.releaseNotes,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.msg_update_available, state.info.latestVersion),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                UpdateChecker.openDownloadUrl(context, state.info.downloadUrl.ifBlank { state.info.releaseUrl })
+                                viewModel.dismissUpdateDialog()
+                            }
+                        ) {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.btn_download_update))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
+                            Text(stringResource(R.string.btn_cancel))
+                        }
+                    }
+                )
+            } else {
+                LaunchedEffect(state) {
+                    snackbarHostState.showSnackbar(context.getString(R.string.msg_no_updates, BuildConfig.VERSION_NAME))
+                    viewModel.dismissUpdateDialog()
+                }
+            }
+        }
+        is UpdateUiState.Error -> {
+            LaunchedEffect(state) {
+                snackbarHostState.showSnackbar("Ошибка проверки: ${state.message}")
+                viewModel.dismissUpdateDialog()
+            }
+        }
+        else -> {}
     }
 
     // Start Time Picker Dialog

@@ -84,14 +84,14 @@ class AppPreferences(context: Context) {
         }
 
     var appLanguage: String
-        get() = prefs.getString(KEY_APP_LANGUAGE, "system") ?: "system"
+        get() = prefs.getString(KEY_APP_LANGUAGE, "ru") ?: "ru"
         set(value) {
             prefs.edit().putString(KEY_APP_LANGUAGE, value).apply()
             _appLanguageFlow.value = value
         }
 
     var appTheme: String
-        get() = prefs.getString(KEY_APP_THEME, "system") ?: "system"
+        get() = prefs.getString(KEY_APP_THEME, "dark") ?: "dark"
         set(value) {
             prefs.edit().putString(KEY_APP_THEME, value).apply()
             _appThemeFlow.value = value

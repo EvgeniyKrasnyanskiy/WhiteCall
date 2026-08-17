@@ -140,5 +140,17 @@
     <string name="group_add_contact_btn">+ Добавить номер в папку</string>
     <string name="group_numbers_count">Номеров: %d</string>
     <string name="group_select_label">Папка (группа)</string>
+    <string name="section_updates">Обновление приложения</string>
+    <string name="version_label">Версия: %s</string>
+    <string name="btn_check_updates">Проверить обновления</string>
+    <string name="msg_checking_updates">Проверка обновлений...</string>
+    <string name="msg_no_updates">У вас установлена последняя версия (%s)</string>
+    <string name="msg_update_available">Доступно обновление %s</string>
+    <string name="btn_download_update">Скачать обновление</string>
+    <string name="dialog_update_title">Доступна новая версия %s</string>
+    <string name="section_permissions">Системные разрешения</string>
+    <string name="msg_export_error">Ошибка экспорта файла</string>
     <string name="dialog_delete_folder_msg">Удалить эту папку и все сохраненные в ней номера?</string>
+    <string name="dialog_clear_history_title">Очистить журнал?</string>
+    <string name="dialog_clear_history_msg">Все записи заблокированных вызовов будут удалены без возможности восстановления.</string>
 </resources>

@@ -140,5 +140,17 @@
     <string name="group_add_contact_btn">+ Add number to folder</string>
     <string name="group_numbers_count">Numbers: %d</string>
     <string name="group_select_label">Folder (Group)</string>
+    <string name="section_updates">App Updates</string>
+    <string name="version_label">Version: %s</string>
+    <string name="btn_check_updates">Check for Updates</string>
+    <string name="msg_checking_updates">Checking for updates...</string>
+    <string name="msg_no_updates">You have the latest version (%s)</string>
+    <string name="msg_update_available">Update %s is available</string>
+    <string name="btn_download_update">Download Update</string>
+    <string name="dialog_update_title">New version %s is available</string>
+    <string name="section_permissions">System Permissions</string>
+    <string name="msg_export_error">Error exporting backup file</string>
     <string name="dialog_delete_folder_msg">Delete this folder and all numbers inside it?</string>
+    <string name="dialog_clear_history_title">Clear History?</string>
+    <string name="dialog_clear_history_msg">All blocked call logs will be permanently deleted.</string>
 </resources>

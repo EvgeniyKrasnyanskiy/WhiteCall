@@ -97,13 +97,23 @@ fun WhiteListScreen(
     val allowAllContacts by viewModel.allowAllContacts.collectAsState()
 
     var showFabMenu by remember { mutableStateOf(false) }
-    var showManualDialogForGroupId by remember { mutableStateOf<Long?>(null) }
+    var showManualAddDialog by remember { mutableStateOf(false) }
+    var targetGroupIdForManualAdd by remember { mutableStateOf<Long?>(null) }
+
     var showAddGroupDialog by remember { mutableStateOf(false) }
     var showEditGroupDialog by remember { mutableStateOf<GroupItem?>(null) }
     var showDeleteGroupDialog by remember { mutableStateOf<GroupItem?>(null) }
     var showContactsRationale by remember { mutableStateOf(false) }
 
     var targetGroupIdForContactPicker by remember { mutableStateOf<Long?>(null) }
+
+    val switchColors = SwitchDefaults.colors(
+        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+        checkedTrackColor = MaterialTheme.colorScheme.primary,
+        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        uncheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+    )
 
     // System Contact Picker Launcher
     val contactPickerLauncher = rememberLauncherForActivityResult(
@@ -182,7 +192,8 @@ fun WhiteListScreen(
                         },
                         onClick = {
                             showFabMenu = false
-                            showManualDialogForGroupId = null
+                            targetGroupIdForManualAdd = null
+                            showManualAddDialog = true
                         }
                     )
                 }
@@ -252,12 +263,7 @@ fun WhiteListScreen(
                             }
                             viewModel.onToggleAllowAllContacts(enabled)
                         },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        colors = switchColors
                     )
                 }
             }
@@ -294,11 +300,15 @@ fun WhiteListScreen(
                         FolderCardItem(
                             folder = item,
                             isExpanded = isExpanded,
+                            switchColors = switchColors,
                             onToggleExpand = { viewModel.toggleGroupExpanded(item.group.id) },
                             onToggleActive = { active -> viewModel.setGroupActive(item.group.id, active) },
                             onEdit = { showEditGroupDialog = item.group },
                             onDelete = { showDeleteGroupDialog = item.group },
-                            onAddManual = { showManualDialogForGroupId = item.group.id },
+                            onAddManual = {
+                                targetGroupIdForManualAdd = item.group.id
+                                showManualAddDialog = true
+                            },
                             onAddContact = {
                                 targetGroupIdForContactPicker = item.group.id
                                 if (ContactHelper.hasContactsPermission(context)) {
@@ -322,13 +332,13 @@ fun WhiteListScreen(
     }
 
     // Manual Add Number Dialog
-    if (showManualDialogForGroupId != null || (showFabMenu == false && showManualDialogForGroupId == -100L)) {
+    if (showManualAddDialog) {
         var nameInput by remember { mutableStateOf("") }
         var phoneInput by remember { mutableStateOf("") }
         var isError by remember { mutableStateOf(false) }
 
         AlertDialog(
-            onDismissRequest = { showManualDialogForGroupId = null },
+            onDismissRequest = { showManualAddDialog = false },
             title = { Text(stringResource(R.string.dialog_add_number_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -366,9 +376,9 @@ fun WhiteListScreen(
                             viewModel.addManualNumber(
                                 name = nameInput,
                                 phoneNumber = phoneInput,
-                                groupId = showManualDialogForGroupId,
+                                groupId = targetGroupIdForManualAdd,
                                 onSuccess = {
-                                    showManualDialogForGroupId = null
+                                    showManualAddDialog = false
                                     scope.launch {
                                         snackbarHostState.showSnackbar(context.getString(R.string.msg_number_added))
                                     }
@@ -382,7 +392,7 @@ fun WhiteListScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showManualDialogForGroupId = null }) {
+                TextButton(onClick = { showManualAddDialog = false }) {
                     Text(stringResource(R.string.btn_cancel))
                 }
             }
@@ -515,6 +525,7 @@ fun WhiteListScreen(
 fun FolderCardItem(
     folder: GroupWithEntries,
     isExpanded: Boolean,
+    switchColors: SwitchDefaultsColors? = null,
     onToggleExpand: () -> Unit,
     onToggleActive: (Boolean) -> Unit,
     onEdit: () -> Unit,
@@ -580,11 +591,12 @@ fun FolderCardItem(
                 Switch(
                     checked = group.isActive,
                     onCheckedChange = onToggleActive,
-                    colors = SwitchDefaults.colors(
+                    colors = switchColors ?: SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary,
                         uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        uncheckedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
                     )
                 )
 
@@ -670,6 +682,8 @@ fun FolderCardItem(
         }
     }
 }
+
+typealias SwitchDefaultsColors = androidx.compose.material3.SwitchColors
 
 @Composable
 fun FolderContactRow(

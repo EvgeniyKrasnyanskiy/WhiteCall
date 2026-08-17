@@ -76,7 +76,7 @@ fun BlockedLogScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -85,14 +85,15 @@ fun BlockedLogScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    OutlinedButton(
+                    IconButton(
                         onClick = { showClearDialog = true },
-                        shape = RoundedCornerShape(10.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Text(
-                            text = stringResource(R.string.btn_clear_log),
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 13.sp
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_delete),
+                            contentDescription = stringResource(R.string.btn_clear_log),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
