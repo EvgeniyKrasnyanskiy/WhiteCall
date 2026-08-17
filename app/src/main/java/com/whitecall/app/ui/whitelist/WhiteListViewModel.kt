@@ -33,9 +33,15 @@ class WhiteListViewModel(
 
     val allowAllContacts: StateFlow<Boolean> = preferences.allowAllContactsFlow
     val isProtectionEnabled: StateFlow<Boolean> = preferences.protectionEnabledFlow
+    val scheduleSettings: StateFlow<com.whitecall.app.domain.model.ScheduleSettings> = preferences.scheduleSettingsFlow
 
     fun setProtectionEnabled(context: android.content.Context, enabled: Boolean) {
         preferences.isProtectionEnabled = enabled
+        com.whitecall.app.widget.WhiteCallWidgetProvider.updateAllWidgets(context)
+    }
+
+    fun updateScheduleSettings(context: android.content.Context, settings: com.whitecall.app.domain.model.ScheduleSettings) {
+        preferences.scheduleSettings = settings
         com.whitecall.app.widget.WhiteCallWidgetProvider.updateAllWidgets(context)
     }
 

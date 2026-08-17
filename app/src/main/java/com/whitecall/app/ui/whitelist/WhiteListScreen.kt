@@ -17,6 +17,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.CreateNewFolder
@@ -51,6 +54,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,10 +63,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import com.whitecall.app.ui.components.AppSnackbarHost
-import com.whitecall.app.ui.components.showCustomSnackbar
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -93,14 +95,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.whitecall.app.R
 import com.whitecall.app.domain.model.GroupItem
 import com.whitecall.app.domain.model.WhiteListEntry
+import com.whitecall.app.ui.components.AppSnackbarHost
+import com.whitecall.app.ui.components.AppTimePickerDialog
 import com.whitecall.app.ui.components.EmptyStateView
 import com.whitecall.app.ui.components.PermissionRationaleDialog
+import com.whitecall.app.ui.components.showCustomSnackbar
 import com.whitecall.app.ui.theme.StatusActive
 import com.whitecall.app.ui.theme.StatusInactive
 import com.whitecall.app.util.ContactHelper
 import com.whitecall.app.util.PermissionHelper
-import kotlinx.coroutines.launch
+import java.util.Calendar
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WhiteListScreen(
     viewModel: WhiteListViewModel = viewModel()
@@ -114,6 +120,10 @@ fun WhiteListScreen(
     val expandedGroupIds by viewModel.expandedGroupIds.collectAsState()
     val isProtectionEnabled by viewModel.isProtectionEnabled.collectAsState()
     val allowAllContacts by viewModel.allowAllContacts.collectAsState()
+    val scheduleSettings by viewModel.scheduleSettings.collectAsState()
+
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
 
     var showFabMenu by remember { mutableStateOf(false) }
     var showManualAddDialog by remember { mutableStateOf(false) }
@@ -188,7 +198,7 @@ fun WhiteListScreen(
     }
 
     Scaffold(
-        snackbarHost = { com.whitecall.app.ui.components.AppSnackbarHost(snackbarHostState) },
+        snackbarHost = { AppSnackbarHost(snackbarHostState) },
         floatingActionButton = {
             Box {
                 FloatingActionButton(
@@ -351,7 +361,148 @@ fun WhiteListScreen(
                 }
             }
 
-            // 3. Allow All Contacts Card
+            // 3. Schedule Settings Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.schedule_enable),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.schedule_enable_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Switch(
+                            checked = scheduleSettings.isEnabled,
+                            onCheckedChange = { enabled ->
+                                viewModel.updateScheduleSettings(
+                                    context,
+                                    scheduleSettings.copy(isEnabled = enabled)
+                                )
+                            },
+                            colors = switchColors
+                        )
+                    }
+
+                    AnimatedVisibility(visible = scheduleSettings.isEnabled) {
+                        Column(modifier = Modifier.padding(top = 10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.schedule_start_time),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                OutlinedButton(
+                                    onClick = { showStartTimePicker = true },
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = String.format("%02d:%02d", scheduleSettings.startHour, scheduleSettings.startMinute),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.schedule_end_time),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                OutlinedButton(
+                                    onClick = { showEndTimePicker = true },
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = String.format("%02d:%02d", scheduleSettings.endHour, scheduleSettings.endMinute),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = stringResource(R.string.schedule_days),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            val days = listOf(
+                                Calendar.MONDAY to R.string.day_mon,
+                                Calendar.TUESDAY to R.string.day_tue,
+                                Calendar.WEDNESDAY to R.string.day_wed,
+                                Calendar.THURSDAY to R.string.day_thu,
+                                Calendar.FRIDAY to R.string.day_fri,
+                                Calendar.SATURDAY to R.string.day_sat,
+                                Calendar.SUNDAY to R.string.day_sun
+                            )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                days.forEach { (calDay, stringResId) ->
+                                    val isSelected = scheduleSettings.activeDays.contains(calDay)
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            val newDays = if (isSelected) {
+                                                if (scheduleSettings.activeDays.size > 1) {
+                                                    scheduleSettings.activeDays - calDay
+                                                } else scheduleSettings.activeDays
+                                            } else {
+                                                scheduleSettings.activeDays + calDay
+                                            }
+                                            viewModel.updateScheduleSettings(
+                                                context,
+                                                scheduleSettings.copy(activeDays = newDays)
+                                            )
+                                        },
+                                        label = { Text(stringResource(stringResId), fontSize = 11.sp) },
+                                        leadingIcon = if (isSelected) {
+                                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                        } else null,
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Allow All Contacts Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -394,7 +545,7 @@ fun WhiteListScreen(
                 }
             }
 
-            // 4. Folders List or Empty State
+            // 5. Folders List or Empty State
             if (folders.isEmpty()) {
                 if (allowAllContacts) {
                     EmptyStateView(
@@ -724,6 +875,40 @@ fun WhiteListScreen(
                 contactsPermissionLauncher.launch(android.Manifest.permission.READ_CONTACTS)
             },
             onDismiss = { showContactsRationale = false }
+        )
+    }
+
+    // Start Time Picker Dialog
+    if (showStartTimePicker) {
+        AppTimePickerDialog(
+            title = stringResource(R.string.schedule_start_time),
+            initialHour = scheduleSettings.startHour,
+            initialMinute = scheduleSettings.startMinute,
+            onConfirm = { hour, minute ->
+                showStartTimePicker = false
+                viewModel.updateScheduleSettings(
+                    context,
+                    scheduleSettings.copy(startHour = hour, startMinute = minute)
+                )
+            },
+            onDismiss = { showStartTimePicker = false }
+        )
+    }
+
+    // End Time Picker Dialog
+    if (showEndTimePicker) {
+        AppTimePickerDialog(
+            title = stringResource(R.string.schedule_end_time),
+            initialHour = scheduleSettings.endHour,
+            initialMinute = scheduleSettings.endMinute,
+            onConfirm = { hour, minute ->
+                showEndTimePicker = false
+                viewModel.updateScheduleSettings(
+                    context,
+                    scheduleSettings.copy(endHour = hour, endMinute = minute)
+                )
+            },
+            onDismiss = { showEndTimePicker = false }
         )
     }
 }

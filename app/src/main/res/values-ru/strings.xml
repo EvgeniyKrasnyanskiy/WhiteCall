@@ -133,6 +133,12 @@
     <string name="widget_blocked_short">Блок: %d</string>
     <string name="widget_title_compact">WC</string>
     <string name="widget_title_full">WhiteCall</string>
+    <string name="setting_about_app">О программе</string>
+    <string name="setting_about_app_desc">Справка, приватность, OEM-настройки и обновления</string>
+    <string name="block_mode_silence_short">Беззвучный (гудки)</string>
+    <string name="block_mode_reject_short">Сброс (занято)</string>
+    <string name="faq_screening_title">Зачем нужна «Служба фильтрации вызовов»?</string>
+    <string name="faq_screening_desc">Это официальный системный механизм Android (Android 10+). Он позволяет WhiteCall безопасно и мгновенно проверить входящий номер в долю секунды и отклонить нежелательный вызов до того, как телефон зазвонит, завибрирует или загорится экран.\n\nБез назначения службы фильтрации по умолчанию ни одно Android-приложение не имеет права бесшумно перехватывать и сбрасывать входящие звонки.</string>
     <string name="setting_block_mode_title">Режим блокировки вызовов</string>
     <string name="block_mode_reject">Сброс вызова (абонент занят)</string>
     <string name="block_mode_reject_desc">Звонящий сразу получает сигнал «Занято» и сброс соединения.</string>
