@@ -244,14 +244,18 @@ fun SettingsScreen(
                     } else {
                         OutlinedButton(
                             onClick = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    val roleManager = context.getSystemService(RoleManager::class.java)
-                                    val intent = roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-                                    if (intent != null) {
-                                        roleLauncher.launch(intent)
-                                    } else {
-                                        val sysIntent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-                                        context.startActivity(sysIntent)
+                                try {
+                                    val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    try {
+                                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                            data = Uri.fromParts("package", context.packageName, null)
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (e2: Exception) {
+                                        val intent = Intent(Settings.ACTION_SETTINGS)
+                                        context.startActivity(intent)
                                     }
                                 }
                             },
