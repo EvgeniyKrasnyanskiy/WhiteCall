@@ -183,7 +183,7 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 24.dp)
         ) {
-            // 1. System Permissions (Compact Card)
+            // 1. System Permissions (Clean Single Row)
             SectionHeader(title = stringResource(R.string.section_permissions))
             Card(
                 modifier = Modifier
@@ -215,7 +215,7 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = if (isRoleHeld) stringResource(R.string.status_granted) else stringResource(R.string.status_not_granted),
+                            text = if (isRoleHeld) stringResource(R.string.screening_role_active_desc) else stringResource(R.string.screening_role_inactive_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isRoleHeld) StatusActive else MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Medium
@@ -239,19 +239,25 @@ fun SettingsScreen(
                             ),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text(stringResource(R.string.btn_enable_screening), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.btn_set_default), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         OutlinedButton(
                             onClick = {
-                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                    data = Uri.fromParts("package", context.packageName, null)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    val roleManager = context.getSystemService(RoleManager::class.java)
+                                    val intent = roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                                    if (intent != null) {
+                                        roleLauncher.launch(intent)
+                                    } else {
+                                        val sysIntent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+                                        context.startActivity(sysIntent)
+                                    }
                                 }
-                                context.startActivity(intent)
                             },
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text(stringResource(R.string.status_granted), fontSize = 11.sp)
+                            Text(stringResource(R.string.btn_change_screening), fontSize = 11.sp)
                         }
                     }
                 }
@@ -508,64 +514,9 @@ fun SettingsScreen(
         AboutAppDialog(
             updateState = updateState,
             onCheckUpdates = { viewModel.checkForUpdates() },
+            onDismissUpdateState = { viewModel.dismissUpdateDialog() },
             onDismiss = { showAboutAppDialog = false }
         )
-    }
-
-    // Update Result Dialog / Snackbar
-    when (val state = updateState) {
-        is UpdateUiState.Success -> {
-            if (state.info.hasUpdate) {
-                AlertDialog(
-                    onDismissRequest = { viewModel.dismissUpdateDialog() },
-                    title = { Text(stringResource(R.string.dialog_update_title, state.info.latestVersion)) },
-                    text = {
-                        Column {
-                            if (state.info.releaseNotes.isNotBlank()) {
-                                Text(
-                                    text = state.info.releaseNotes,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            } else {
-                                Text(
-                                    text = stringResource(R.string.msg_update_available, state.info.latestVersion),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                UpdateChecker.openDownloadUrl(context, state.info.downloadUrl.ifBlank { state.info.releaseUrl })
-                                viewModel.dismissUpdateDialog()
-                            }
-                        ) {
-                            Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(stringResource(R.string.btn_download_update))
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
-                            Text(stringResource(R.string.btn_cancel))
-                        }
-                    }
-                )
-            } else {
-                LaunchedEffect(state) {
-                    scope.showCustomSnackbar(snackbarHostState, context.getString(R.string.msg_no_updates, BuildConfig.VERSION_NAME))
-                    viewModel.dismissUpdateDialog()
-                }
-            }
-        }
-        is UpdateUiState.Error -> {
-            LaunchedEffect(state) {
-                scope.showCustomSnackbar(snackbarHostState, "Ошибка проверки: ${state.message}")
-                viewModel.dismissUpdateDialog()
-            }
-        }
-        else -> {}
     }
 }
 
@@ -574,18 +525,47 @@ fun SettingsScreen(
 fun AboutAppDialog(
     updateState: UpdateUiState,
     onCheckUpdates: () -> Unit,
+    onDismissUpdateState: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val dialogSnackbarHostState = remember { SnackbarHostState() }
+
     var faqScreeningExpanded by remember { mutableStateOf(false) }
     var faqHowItWorksExpanded by remember { mutableStateOf(false) }
     var faqPrivacyExpanded by remember { mutableStateOf(false) }
     var faqOemExpanded by remember { mutableStateOf(false) }
+
+    // React to update state right inside this dialog
+    LaunchedEffect(updateState) {
+        when (updateState) {
+            is UpdateUiState.Success -> {
+                if (!updateState.info.hasUpdate) {
+                    scope.showCustomSnackbar(
+                        dialogSnackbarHostState,
+                        context.getString(R.string.msg_no_updates, BuildConfig.VERSION_NAME)
+                    )
+                    onDismissUpdateState()
+                }
+            }
+            is UpdateUiState.Error -> {
+                scope.showCustomSnackbar(
+                    dialogSnackbarHostState,
+                    "Ошибка проверки: ${updateState.message}"
+                )
+                onDismissUpdateState()
+            }
+            else -> {}
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Scaffold(
+            snackbarHost = { AppSnackbarHost(dialogSnackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text(stringResource(R.string.setting_about_app), fontWeight = FontWeight.Bold) },
@@ -736,6 +716,47 @@ fun AboutAppDialog(
                 }
             }
         }
+    }
+
+    // New version available dialog
+    if (updateState is UpdateUiState.Success && updateState.info.hasUpdate) {
+        val info = updateState.info
+        AlertDialog(
+            onDismissRequest = onDismissUpdateState,
+            title = { Text(stringResource(R.string.dialog_update_title, info.latestVersion)) },
+            text = {
+                Column {
+                    if (info.releaseNotes.isNotBlank()) {
+                        Text(
+                            text = info.releaseNotes,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.msg_update_available, info.latestVersion),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        UpdateChecker.openDownloadUrl(context, info.downloadUrl.ifBlank { info.releaseUrl })
+                        onDismissUpdateState()
+                    }
+                ) {
+                    Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(stringResource(R.string.btn_download_update))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissUpdateState) {
+                    Text(stringResource(R.string.btn_cancel))
+                }
+            }
+        )
     }
 }
 

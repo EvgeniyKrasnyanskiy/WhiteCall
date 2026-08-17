@@ -61,11 +61,14 @@
     <!-- Settings & Info Screen -->
     <string name="settings_title">Settings &amp; Info</string>
     <string name="section_system_role">System Integration</string>
-    <string name="card_call_screening_title">Default Call Screening App</string>
-    <string name="card_call_screening_desc">Required to filter and silently reject incoming calls before screen wake-up and ringing.</string>
+    <string name="card_call_screening_title">Call Screening Service</string>
+    <string name="card_call_screening_desc">Required to filter and silently reject incoming calls before screen wake and ringtone.</string>
     <string name="status_granted">Active</string>
-    <string name="status_not_granted">Requires Setup</string>
-    <string name="btn_set_default">Set as Default App</string>
+    <string name="status_not_granted">Disabled</string>
+    <string name="btn_set_default">Enable</string>
+    <string name="btn_change_screening">Change</string>
+    <string name="screening_role_active_desc">Set as default call screening service</string>
+    <string name="screening_role_inactive_desc">Enable to activate call protection</string>
 
     <!-- Theme -->
     <string name="section_theme">Appearance &amp; Theme</string>
