@@ -7,15 +7,19 @@ object LocaleHelper {
 
     /**
      * Applies language preference ("system", "en", "ru").
+     * Safely checks language code to avoid activity recreation loops during configuration changes.
      */
     fun applyLanguage(languageCode: String) {
-        val currentLocales = AppCompatDelegate.getApplicationLocales()
         val targetLocales = when (languageCode.lowercase()) {
             "en" -> LocaleListCompat.forLanguageTags("en")
             "ru" -> LocaleListCompat.forLanguageTags("ru")
-            else -> LocaleListCompat.getEmptyLocaleList() // System default
+            else -> LocaleListCompat.getEmptyLocaleList()
         }
-        if (currentLocales != targetLocales) {
+        val currentLocales = AppCompatDelegate.getApplicationLocales()
+        val currentCode = if (currentLocales.isEmpty) "system" else currentLocales.get(0)?.language ?: "system"
+        val targetCode = if (targetLocales.isEmpty) "system" else targetLocales.get(0)?.language ?: "system"
+
+        if (currentCode != targetCode) {
             AppCompatDelegate.setApplicationLocales(targetLocales)
         }
     }

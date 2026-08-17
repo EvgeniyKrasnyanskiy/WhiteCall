@@ -62,7 +62,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val app = application as WhiteCallApplication
-        LocaleHelper.applyLanguage(app.preferences.appLanguage)
 
         setContent {
             val appTheme by app.preferences.appThemeFlow.collectAsState()

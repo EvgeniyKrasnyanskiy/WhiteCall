@@ -33,6 +33,17 @@ class AppPreferences(context: Context) {
     private val _blockModeFlow = MutableStateFlow(blockMode)
     val blockModeFlow: StateFlow<String> = _blockModeFlow.asStateFlow()
 
+    init {
+        if (!prefs.contains(KEY_PROTECTION_ENABLED)) {
+            prefs.edit().putBoolean(KEY_PROTECTION_ENABLED, true).apply()
+            _protectionEnabledFlow.value = true
+        }
+        if (!prefs.contains(KEY_ALLOW_ALL_CONTACTS)) {
+            prefs.edit().putBoolean(KEY_ALLOW_ALL_CONTACTS, true).apply()
+            _allowAllContactsFlow.value = true
+        }
+    }
+
     var isProtectionEnabled: Boolean
         get() = prefs.getBoolean(KEY_PROTECTION_ENABLED, true)
         set(value) {

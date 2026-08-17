@@ -6,96 +6,82 @@
     android:background="@drawable/widget_background"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingStart="14dp"
-    android:paddingTop="6dp"
-    android:paddingEnd="10dp"
-    android:paddingBottom="6dp">
+    android:paddingStart="12dp"
+    android:paddingTop="2dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="2dp">
 
-    <!-- Left side: 2 distinct lines for 3x1..5x1 -->
-    <LinearLayout
+    <!-- Status Shield Icon -->
+    <ImageView
+        android:id="@+id/widget_status_icon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:contentDescription="@string/widget_title_full"
+        android:scaleType="centerInside" />
+
+    <!-- Title "WhiteCall" -->
+    <TextView
+        android:id="@+id/widget_title_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:ellipsize="none"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:text="@string/widget_title_full"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- Incoming Call Flashing Handset Icon -->
+    <ImageView
+        android:id="@+id/widget_incoming_icon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="8dp"
+        android:scaleType="centerInside"
+        android:visibility="gone" />
+
+    <!-- Status text / Active Alert Caller Display -->
+    <TextView
+        android:id="@+id/widget_status_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
         android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:orientation="vertical">
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:text="@string/protection_status_active"
+        android:textColor="@color/widget_status_active"
+        android:textSize="13sp"
+        android:textStyle="bold" />
 
-        <!-- Line 1: Shield + "WhiteCall" + Status -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/widget_status_icon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:contentDescription="@string/widget_title_full"
-                android:scaleType="centerInside" />
-
-            <TextView
-                android:id="@+id/widget_title_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:ellipsize="none"
-                android:maxLines="1"
-                android:singleLine="true"
-                android:text="@string/widget_title_full"
-                android:textColor="@color/widget_text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/widget_status_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:singleLine="true"
-                android:text="@string/protection_status_active"
-                android:textColor="@color/widget_status_active"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <!-- Line 2: Incoming handset icon + Block count badge / Caller alert -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/widget_incoming_icon"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:layout_marginEnd="4dp"
-                android:scaleType="centerInside"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/widget_blocked_badge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:singleLine="true"
-                android:text="Блок: 0"
-                android:textColor="@color/widget_text_secondary"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-    </LinearLayout>
+    <!-- Block Counter Badge: "Блок: N" -->
+    <TextView
+        android:id="@+id/widget_blocked_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/widget_badge_bg"
+        android:paddingStart="8dp"
+        android:paddingTop="3dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="3dp"
+        android:ellipsize="none"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:text="Блок: 0"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
     <!-- Right: Power Button -->
     <ImageButton
         android:id="@+id/widget_toggle_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="8dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:background="@android:color/transparent"
         android:contentDescription="@string/widget_toggle_protection"
         android:scaleType="centerInside" />

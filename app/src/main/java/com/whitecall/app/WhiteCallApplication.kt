@@ -31,6 +31,7 @@ class WhiteCallApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        com.whitecall.app.util.LocaleHelper.applyLanguage(preferences.appLanguage)
     }
 
     companion object {

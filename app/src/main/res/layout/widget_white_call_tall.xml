@@ -67,7 +67,7 @@
         android:layout_height="1dp"
         android:layout_marginTop="6dp"
         android:layout_marginBottom="6dp"
-        android:background="#2A3342"
+        android:background="#33FFFFFF"
         android:orientation="horizontal" />
 
     <!-- Middle Row: Blocking stats (Day / Week / Month / WhiteList) in large 15sp bold -->
@@ -95,7 +95,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:background="#2A303C"
+            android:background="@drawable/widget_badge_bg"
             android:paddingStart="8dp"
             android:paddingTop="2dp"
             android:paddingEnd="8dp"

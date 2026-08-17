@@ -257,361 +257,355 @@ fun WhiteListScreen(
             }
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // 1. Warning Banner if Call Screening is not set as default
-            AnimatedVisibility(
-                visible = !isRoleHeld,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
+            if (!isRoleHeld) {
+                item(key = "warning_banner") {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.banner_call_screening_warning_title),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Text(
-                                text = stringResource(R.string.banner_call_screening_warning_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    val roleManager = context.getSystemService(RoleManager::class.java)
-                                    val intent = roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-                                    if (intent != null) {
-                                        roleLauncher.launch(intent)
-                                    }
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            ),
-                            shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(stringResource(R.string.btn_enable_screening), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.banner_call_screening_warning_title),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = stringResource(R.string.banner_call_screening_warning_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                        val roleManager = context.getSystemService(RoleManager::class.java)
+                                        val intent = roleManager?.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                                        if (intent != null) {
+                                            roleLauncher.launch(intent)
+                                        }
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(stringResource(R.string.btn_enable_screening), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
             }
 
             // 2. Main Protection Settings Panel (Framed Card with Border)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(18.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    // A. Master Call Protection Switch
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.protection_master_switch),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = stringResource(R.string.protection_master_switch_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Switch(
-                            checked = isProtectionEnabled,
-                            onCheckedChange = { viewModel.setProtectionEnabled(context, it) },
-                            colors = switchColors
-                        )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 10.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            item(key = "protection_panel") {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-
-                    // B. Schedule Settings Row
-                    val dayLabels = listOf(
-                        Calendar.MONDAY to stringResource(R.string.day_mon),
-                        Calendar.TUESDAY to stringResource(R.string.day_tue),
-                        Calendar.WEDNESDAY to stringResource(R.string.day_wed),
-                        Calendar.THURSDAY to stringResource(R.string.day_thu),
-                        Calendar.FRIDAY to stringResource(R.string.day_fri),
-                        Calendar.SATURDAY to stringResource(R.string.day_sat),
-                        Calendar.SUNDAY to stringResource(R.string.day_sun)
-                    )
-                    val scheduleDaysSummary = if (scheduleSettings.activeDays.size == 7) {
-                        "ежедневно"
-                    } else {
-                        dayLabels.filter { scheduleSettings.activeDays.contains(it.first) }.joinToString(", ") { it.second }
-                    }
-                    val scheduleSummary = String.format(
-                        "%02d:%02d – %02d:%02d (%s)",
-                        scheduleSettings.startHour,
-                        scheduleSettings.startMinute,
-                        scheduleSettings.endHour,
-                        scheduleSettings.endMinute,
-                        scheduleDaysSummary
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(enabled = scheduleSettings.isEnabled) {
-                                isScheduleExpanded = !isScheduleExpanded
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.schedule_enable),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            if (scheduleSettings.isEnabled && !isScheduleExpanded) {
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        // A. Master Call Protection Switch
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = scheduleSummary,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium
+                                    text = stringResource(R.string.protection_master_switch),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
                                 )
-                            } else {
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = stringResource(R.string.schedule_enable_desc),
+                                    text = stringResource(R.string.protection_master_switch_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        if (scheduleSettings.isEnabled) {
-                            IconButton(
-                                onClick = { isScheduleExpanded = !isScheduleExpanded },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isScheduleExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(4.dp))
-                        }
-                        Switch(
-                            checked = scheduleSettings.isEnabled,
-                            onCheckedChange = { enabled ->
-                                if (enabled) isScheduleExpanded = true
-                                viewModel.updateScheduleSettings(
-                                    context,
-                                    scheduleSettings.copy(isEnabled = enabled)
-                                )
-                            },
-                            colors = switchColors
-                        )
-                    }
-
-                    AnimatedVisibility(visible = scheduleSettings.isEnabled && isScheduleExpanded) {
-                        Column(modifier = Modifier.padding(top = 10.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.schedule_start_time),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                OutlinedButton(
-                                    onClick = { showStartTimePicker = true },
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = String.format("%02d:%02d", scheduleSettings.startHour, scheduleSettings.startMinute),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.schedule_end_time),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                OutlinedButton(
-                                    onClick = { showEndTimePicker = true },
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = String.format("%02d:%02d", scheduleSettings.endHour, scheduleSettings.endMinute),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = stringResource(R.string.schedule_days),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Switch(
+                                checked = isProtectionEnabled,
+                                onCheckedChange = { viewModel.setProtectionEnabled(context, it) },
+                                colors = switchColors
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                        }
 
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                dayLabels.forEach { (calDay, label) ->
-                                    val isSelected = scheduleSettings.activeDays.contains(calDay)
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = {
-                                            val newDays = if (isSelected) {
-                                                if (scheduleSettings.activeDays.size > 1) {
-                                                    scheduleSettings.activeDays - calDay
-                                                } else scheduleSettings.activeDays
-                                            } else {
-                                                scheduleSettings.activeDays + calDay
-                                            }
-                                            viewModel.updateScheduleSettings(
-                                                context,
-                                                scheduleSettings.copy(activeDays = newDays)
-                                            )
-                                        },
-                                        label = { Text(label, fontSize = 11.sp) },
-                                        leadingIcon = if (isSelected) {
-                                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                        } else null,
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        )
+
+                        // B. Schedule Settings Row
+                        val dayLabels = listOf(
+                            Calendar.MONDAY to stringResource(R.string.day_mon),
+                            Calendar.TUESDAY to stringResource(R.string.day_tue),
+                            Calendar.WEDNESDAY to stringResource(R.string.day_wed),
+                            Calendar.THURSDAY to stringResource(R.string.day_thu),
+                            Calendar.FRIDAY to stringResource(R.string.day_fri),
+                            Calendar.SATURDAY to stringResource(R.string.day_sat),
+                            Calendar.SUNDAY to stringResource(R.string.day_sun)
+                        )
+                        val scheduleDaysSummary = if (scheduleSettings.activeDays.size == 7) {
+                            "ежедневно"
+                        } else {
+                            dayLabels.filter { scheduleSettings.activeDays.contains(it.first) }.joinToString(", ") { it.second }
+                        }
+                        val scheduleSummary = String.format(
+                            "%02d:%02d – %02d:%02d (%s)",
+                            scheduleSettings.startHour,
+                            scheduleSettings.startMinute,
+                            scheduleSettings.endHour,
+                            scheduleSettings.endMinute,
+                            scheduleDaysSummary
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = scheduleSettings.isEnabled) {
+                                    isScheduleExpanded = !isScheduleExpanded
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.schedule_enable),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                if (scheduleSettings.isEnabled && !isScheduleExpanded) {
+                                    Text(
+                                        text = scheduleSummary,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.schedule_enable_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            TextButton(
-                                onClick = { isScheduleExpanded = false },
-                                modifier = Modifier.align(Alignment.End)
-                            ) {
-                                Icon(Icons.Default.ExpandLess, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            if (scheduleSettings.isEnabled) {
+                                IconButton(
+                                    onClick = { isScheduleExpanded = !isScheduleExpanded },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isScheduleExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Свернуть", fontSize = 12.sp)
+                            }
+                            Switch(
+                                checked = scheduleSettings.isEnabled,
+                                onCheckedChange = { enabled ->
+                                    if (enabled) isScheduleExpanded = true
+                                    viewModel.updateScheduleSettings(
+                                        context,
+                                        scheduleSettings.copy(isEnabled = enabled)
+                                    )
+                                },
+                                colors = switchColors
+                            )
+                        }
+
+                        AnimatedVisibility(visible = scheduleSettings.isEnabled && isScheduleExpanded) {
+                            Column(modifier = Modifier.padding(top = 10.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.schedule_start_time),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    OutlinedButton(
+                                        onClick = { showStartTimePicker = true },
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = String.format("%02d:%02d", scheduleSettings.startHour, scheduleSettings.startMinute),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.schedule_end_time),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    OutlinedButton(
+                                        onClick = { showEndTimePicker = true },
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = String.format("%02d:%02d", scheduleSettings.endHour, scheduleSettings.endMinute),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = stringResource(R.string.schedule_days),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    dayLabels.forEach { (calDay, label) ->
+                                        val isSelected = scheduleSettings.activeDays.contains(calDay)
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = {
+                                                val newDays = if (isSelected) {
+                                                    if (scheduleSettings.activeDays.size > 1) {
+                                                        scheduleSettings.activeDays - calDay
+                                                    } else scheduleSettings.activeDays
+                                                } else {
+                                                    scheduleSettings.activeDays + calDay
+                                                }
+                                                viewModel.updateScheduleSettings(
+                                                    context,
+                                                    scheduleSettings.copy(activeDays = newDays)
+                                                )
+                                            },
+                                            label = { Text(label, fontSize = 11.sp) },
+                                            leadingIcon = if (isSelected) {
+                                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                                            } else null,
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                TextButton(
+                                    onClick = { isScheduleExpanded = false },
+                                    modifier = Modifier.align(Alignment.End)
+                                ) {
+                                    Icon(Icons.Default.ExpandLess, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Свернуть", fontSize = 12.sp)
+                                }
                             }
                         }
-                    }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 10.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        )
 
-                    // C. Allow All Contacts Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.whitelist_allow_all_contacts),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = stringResource(R.string.whitelist_allow_all_contacts_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        // C. Allow All Contacts Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.whitelist_allow_all_contacts),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = stringResource(R.string.whitelist_allow_all_contacts_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Switch(
+                                checked = allowAllContacts,
+                                onCheckedChange = { enabled ->
+                                    if (enabled && !ContactHelper.hasContactsPermission(context)) {
+                                        showContactsRationale = true
+                                    }
+                                    viewModel.onToggleAllowAllContacts(enabled)
+                                },
+                                colors = switchColors
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Switch(
-                            checked = allowAllContacts,
-                            onCheckedChange = { enabled ->
-                                if (enabled && !ContactHelper.hasContactsPermission(context)) {
-                                    showContactsRationale = true
-                                }
-                                viewModel.onToggleAllowAllContacts(enabled)
-                            },
-                            colors = switchColors
-                        )
                     }
                 }
             }
 
-            // 5. Folders List or Empty State
+            // 3. Folders List or Empty State
             if (folders.isEmpty()) {
-                if (allowAllContacts) {
-                    EmptyStateView(
-                        iconRes = R.drawable.ic_contact,
-                        title = stringResource(R.string.whitelist_contacts_allowed_title),
-                        description = stringResource(R.string.whitelist_contacts_allowed_desc),
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
-                    EmptyStateView(
-                        iconRes = R.drawable.ic_shield,
-                        title = stringResource(R.string.whitelist_empty_title),
-                        description = stringResource(R.string.whitelist_empty_desc),
-                        modifier = Modifier.weight(1f)
-                    )
+                item(key = "empty_state") {
+                    if (allowAllContacts) {
+                        EmptyStateView(
+                            iconRes = R.drawable.ic_contact,
+                            title = stringResource(R.string.whitelist_contacts_allowed_title),
+                            description = stringResource(R.string.whitelist_contacts_allowed_desc),
+                            modifier = Modifier.padding(vertical = 24.dp)
+                        )
+                    } else {
+                        EmptyStateView(
+                            iconRes = R.drawable.ic_shield,
+                            title = stringResource(R.string.whitelist_empty_title),
+                            description = stringResource(R.string.whitelist_empty_desc),
+                            modifier = Modifier.padding(vertical = 24.dp)
+                        )
+                    }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(folders, key = { it.group.id }) { item ->
+                items(folders, key = { it.group.id }) { item ->
                         val isExpanded = expandedGroupIds.contains(item.group.id)
                         FolderCardItem(
                             folder = item,
@@ -646,7 +640,6 @@ fun WhiteListScreen(
                 }
             }
         }
-    }
 
     // Move Contact to Folder Dialog
     if (showMoveContactDialog != null) {
