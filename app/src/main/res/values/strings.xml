@@ -164,6 +164,11 @@
     <string name="wizard_step_phone_desc">Required to identify incoming caller numbers and update widget alerts.</string>
     <string name="wizard_step_screening_title">Step 3 of 3: Call Screening</string>
     <string name="wizard_step_screening_desc">Main step. Set WhiteCall as your default call screening service so it can silently and instantly block calls not in your whitelist.</string>
+    <string name="dialog_move_contact_title">Move to Folder</string>
+    <string name="btn_create_and_move">+ Create New Folder</string>
+    <string name="btn_move">Move</string>
+    <string name="msg_contact_moved">Contact moved to «%s»</string>
+    <string name="folder_search_hint">Search in folder...</string>
     <string name="btn_skip">Skip</string>
     <string name="btn_next">Next</string>
 </resources>

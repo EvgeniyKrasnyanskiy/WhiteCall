@@ -32,14 +32,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -54,6 +57,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -104,6 +108,7 @@ fun WhiteListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val folders by viewModel.folderList.collectAsState()
+    val allGroups by viewModel.groups.collectAsState()
     val expandedGroupIds by viewModel.expandedGroupIds.collectAsState()
     val isProtectionEnabled by viewModel.isProtectionEnabled.collectAsState()
     val allowAllContacts by viewModel.allowAllContacts.collectAsState()
@@ -115,6 +120,7 @@ fun WhiteListScreen(
     var showAddGroupDialog by remember { mutableStateOf(false) }
     var showEditGroupDialog by remember { mutableStateOf<GroupItem?>(null) }
     var showDeleteGroupDialog by remember { mutableStateOf<GroupItem?>(null) }
+    var showMoveContactDialog by remember { mutableStateOf<WhiteListEntry?>(null) }
     var showContactsRationale by remember { mutableStateOf(false) }
 
     var targetGroupIdForContactPicker by remember { mutableStateOf<Long?>(null) }
@@ -432,6 +438,9 @@ fun WhiteListScreen(
                                     showContactsRationale = true
                                 }
                             },
+                            onMoveEntry = { entry ->
+                                showMoveContactDialog = entry
+                            },
                             onDeleteEntry = { entryId ->
                                 viewModel.deleteEntry(entryId)
                                 scope.launch {
@@ -443,6 +452,101 @@ fun WhiteListScreen(
                 }
             }
         }
+    }
+
+    // Move Contact to Folder Dialog
+    if (showMoveContactDialog != null) {
+        val entry = showMoveContactDialog!!
+        var selectedGroupId by remember { mutableStateOf(entry.groupId ?: (allGroups.firstOrNull()?.id ?: 1L)) }
+        var showNewFolderInput by remember { mutableStateOf(false) }
+        var newFolderNameInput by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showMoveContactDialog = null },
+            title = { Text(stringResource(R.string.dialog_move_contact_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "${entry.displayName} (${entry.phoneNumber})",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    if (!showNewFolderInput) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            allGroups.forEach { group ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedGroupId = group.id }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = selectedGroupId == group.id,
+                                        onClick = { selectedGroupId = group.id }
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(text = group.name, style = MaterialTheme.typography.bodyLarge)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        TextButton(
+                            onClick = { showNewFolderInput = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.btn_create_and_move))
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = newFolderNameInput,
+                            onValueChange = { newFolderNameInput = it },
+                            label = { Text(stringResource(R.string.input_group_name)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (showNewFolderInput) {
+                            if (newFolderNameInput.isNotBlank()) {
+                                viewModel.moveEntryToNewGroup(entry.id, newFolderNameInput) {
+                                    val groupName = newFolderNameInput
+                                    showMoveContactDialog = null
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(context.getString(R.string.msg_contact_moved, groupName))
+                                    }
+                                }
+                            }
+                        } else {
+                            viewModel.moveEntryToGroup(entry.id, selectedGroupId)
+                            val targetName = allGroups.firstOrNull { it.id == selectedGroupId }?.name ?: ""
+                            showMoveContactDialog = null
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(R.string.msg_contact_moved, targetName))
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.btn_move))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMoveContactDialog = null }) {
+                    Text(stringResource(R.string.btn_cancel))
+                }
+            }
+        )
     }
 
     // Manual Add Number Dialog
@@ -646,10 +750,22 @@ fun FolderCardItem(
     onDelete: () -> Unit,
     onAddManual: () -> Unit,
     onAddContact: () -> Unit,
+    onMoveEntry: (WhiteListEntry) -> Unit,
     onDeleteEntry: (Long) -> Unit
 ) {
     val group = folder.group
     val entries = folder.entries
+    var folderSearchQuery by remember { mutableStateOf("") }
+    var isSearchActive by remember { mutableStateOf(false) }
+
+    val filteredEntries = if (folderSearchQuery.isBlank()) {
+        entries
+    } else {
+        val q = folderSearchQuery.trim().lowercase()
+        entries.filter {
+            it.displayName.lowercase().contains(q) || it.phoneNumber.contains(q)
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -739,7 +855,7 @@ fun FolderCardItem(
                 )
             }
 
-            // Expanded Folder Content (Contacts inside this folder)
+            // Expanded Folder Content
             AnimatedVisibility(visible = isExpanded) {
                 Column(
                     modifier = Modifier
@@ -747,28 +863,10 @@ fun FolderCardItem(
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
-                    if (entries.isEmpty()) {
-                        Text(
-                            text = "В этой папке пока нет номеров",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 6.dp)
-                        )
-                    } else {
-                        entries.forEach { entry ->
-                            FolderContactRow(
-                                entry = entry,
-                                onDelete = { onDeleteEntry(entry.id) }
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Buttons to add contact inside this specific folder
+                    // TOP ACTION BAR: [+ Из контактов] [+ Вручную] [🔍 Поиск]
                     Row(
                         modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedButton(
@@ -777,8 +875,8 @@ fun FolderCardItem(
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Icon(Icons.Default.Contacts, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Из контактов", fontSize = 12.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(R.string.whitelist_add_from_contacts), fontSize = 11.sp, maxLines = 1)
                         }
 
                         OutlinedButton(
@@ -787,8 +885,65 @@ fun FolderCardItem(
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Вручную", fontSize = 12.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(R.string.whitelist_add_manual), fontSize = 11.sp, maxLines = 1)
+                        }
+
+                        IconButton(
+                            onClick = {
+                                isSearchActive = !isSearchActive
+                                if (!isSearchActive) folderSearchQuery = ""
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isSearchActive) Icons.Default.Clear else Icons.Default.Search,
+                                contentDescription = null,
+                                tint = if (isSearchActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    // In-Folder Search Field
+                    AnimatedVisibility(visible = isSearchActive) {
+                        Column {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = folderSearchQuery,
+                                onValueChange = { folderSearchQuery = it },
+                                placeholder = { Text(stringResource(R.string.folder_search_hint), fontSize = 12.sp) },
+                                singleLine = true,
+                                trailingIcon = {
+                                    if (folderSearchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { folderSearchQuery = "" }) {
+                                            Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (filteredEntries.isEmpty()) {
+                        Text(
+                            text = if (folderSearchQuery.isNotBlank()) "Номера не найдены" else "В этой папке пока нет номеров",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    } else {
+                        filteredEntries.forEach { entry ->
+                            FolderContactRow(
+                                entry = entry,
+                                onMove = { onMoveEntry(entry) },
+                                onDelete = { onDeleteEntry(entry.id) }
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
                         }
                     }
                 }
@@ -802,6 +957,7 @@ typealias SwitchDefaultsColors = androidx.compose.material3.SwitchColors
 @Composable
 fun FolderContactRow(
     entry: WhiteListEntry,
+    onMove: () -> Unit,
     onDelete: () -> Unit
 ) {
     Surface(
@@ -848,6 +1004,17 @@ fun FolderContactRow(
                 }
             }
 
+            // Move to another folder button
+            IconButton(onClick = onMove, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    imageVector = Icons.Default.DriveFileMove,
+                    contentDescription = stringResource(R.string.dialog_move_contact_title),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            // Delete button
             IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_delete),

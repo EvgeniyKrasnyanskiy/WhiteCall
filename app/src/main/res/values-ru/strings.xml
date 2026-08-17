@@ -164,6 +164,11 @@
     <string name="wizard_step_phone_desc">Необходимо для определения номера звонящего и работы оповещений на виджете.</string>
     <string name="wizard_step_screening_title">Шаг 3 из 3: Фильтрация звонков</string>
     <string name="wizard_step_screening_desc">Главный шаг. Выберите WhiteCall в качестве службы фильтрации по умолчанию, чтобы приложение могло бесшумно и мгновенно сбрасывать звонки не из белого списка.</string>
+    <string name="dialog_move_contact_title">Переместить в папку</string>
+    <string name="btn_create_and_move">+ Создать новую папку</string>
+    <string name="btn_move">Переместить</string>
+    <string name="msg_contact_moved">Контакт перемещен в папку «%s»</string>
+    <string name="folder_search_hint">Поиск в папке...</string>
     <string name="btn_skip">Пропустить</string>
     <string name="btn_next">Далее</string>
 </resources>

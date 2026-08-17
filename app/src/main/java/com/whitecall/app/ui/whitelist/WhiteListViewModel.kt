@@ -139,6 +139,24 @@ class WhiteListViewModel(
         }
     }
 
+    fun moveEntryToGroup(entryId: Long, newGroupId: Long) {
+        viewModelScope.launch {
+            repository.moveEntryToGroup(entryId, newGroupId)
+            _expandedGroupIds.value = _expandedGroupIds.value + newGroupId
+        }
+    }
+
+    fun moveEntryToNewGroup(entryId: Long, newGroupName: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            if (newGroupName.isNotBlank()) {
+                val newId = repository.addGroup(newGroupName)
+                repository.moveEntryToGroup(entryId, newId)
+                _expandedGroupIds.value = _expandedGroupIds.value + newId
+                onSuccess()
+            }
+        }
+    }
+
     fun deleteGroup(id: Long) {
         viewModelScope.launch {
             repository.deleteGroup(id)

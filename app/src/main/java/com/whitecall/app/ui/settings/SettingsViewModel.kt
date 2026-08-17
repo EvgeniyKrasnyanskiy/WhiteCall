@@ -78,8 +78,9 @@ class SettingsViewModel(
 
     fun exportBackup(context: Context, uri: android.net.Uri, onSuccess: (Int) -> Unit, onError: () -> Unit) {
         viewModelScope.launch {
+            val groups = whiteListRepository.getAllGroups()
             val entries = whiteListRepository.getAllEntries()
-            val json = JsonBackupHelper.exportToJson(entries)
+            val json = JsonBackupHelper.exportToJson(groups, entries)
             val ok = JsonBackupHelper.writeToUri(context, uri, json)
             if (ok) onSuccess(entries.size) else onError()
         }
@@ -89,9 +90,9 @@ class SettingsViewModel(
         viewModelScope.launch {
             val json = JsonBackupHelper.readFromUri(context, uri)
             if (json != null) {
-                val entries = JsonBackupHelper.parseFromJson(json)
-                whiteListRepository.addAllEntries(entries)
-                onSuccess(entries.size)
+                val backupData = JsonBackupHelper.parseFromJson(json)
+                val count = whiteListRepository.importBackupData(backupData)
+                onSuccess(count)
             } else {
                 onError()
             }

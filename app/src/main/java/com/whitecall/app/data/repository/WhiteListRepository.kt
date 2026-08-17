@@ -1,15 +1,19 @@
 package com.whitecall.app.data.repository
 
+import com.whitecall.app.data.local.dao.GroupDao
 import com.whitecall.app.data.local.dao.WhiteListDao
+import com.whitecall.app.data.local.entity.GroupEntity
 import com.whitecall.app.data.local.entity.WhiteListEntity
+import com.whitecall.app.domain.model.GroupItem
 import com.whitecall.app.domain.model.WhiteListEntry
 import com.whitecall.app.domain.usecase.NormalizePhoneNumberUseCase
+import com.whitecall.app.util.BackupData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class WhiteListRepository(
     private val whiteListDao: WhiteListDao,
-    private val groupDao: com.whitecall.app.data.local.dao.GroupDao,
+    private val groupDao: GroupDao,
     private val normalizePhoneNumberUseCase: NormalizePhoneNumberUseCase
 ) {
 
@@ -19,14 +23,18 @@ class WhiteListRepository(
         }
     }
 
-    fun getAllGroupsFlow(): Flow<List<com.whitecall.app.domain.model.GroupItem>> {
+    fun getAllGroupsFlow(): Flow<List<GroupItem>> {
         return groupDao.getAllGroupsFlow().map { list ->
-            list.map { com.whitecall.app.domain.model.GroupItem(it.id, it.name, it.isActive, it.createdAt) }
+            list.map { GroupItem(it.id, it.name, it.isActive, it.createdAt) }
         }
     }
 
     suspend fun getAllEntries(): List<WhiteListEntry> {
         return whiteListDao.getAllNumbers().map { it.toDomain() }
+    }
+
+    suspend fun getAllGroups(): List<GroupItem> {
+        return groupDao.getAllGroups().map { GroupItem(it.id, it.name, it.isActive, it.createdAt) }
     }
 
     suspend fun getWhiteListCount(): Int {
@@ -74,7 +82,7 @@ class WhiteListRepository(
         if (groups.isNotEmpty()) {
             return groups.first().id
         }
-        val defaultGroup = com.whitecall.app.data.local.entity.GroupEntity(name = "Основная")
+        val defaultGroup = GroupEntity(name = "Основная")
         return groupDao.insert(defaultGroup)
     }
 
@@ -94,13 +102,17 @@ class WhiteListRepository(
         return true
     }
 
+    suspend fun moveEntryToGroup(entryId: Long, newGroupId: Long) {
+        whiteListDao.assignNumberToGroup(entryId, newGroupId)
+    }
+
     suspend fun addGroup(name: String): Long {
-        val entity = com.whitecall.app.data.local.entity.GroupEntity(name = name.trim())
+        val entity = GroupEntity(name = name.trim())
         return groupDao.insert(entity)
     }
 
     suspend fun updateGroup(id: Long, name: String, isActive: Boolean) {
-        groupDao.update(com.whitecall.app.data.local.entity.GroupEntity(id = id, name = name.trim(), isActive = isActive))
+        groupDao.update(GroupEntity(id = id, name = name.trim(), isActive = isActive))
     }
 
     suspend fun setGroupActive(id: Long, isActive: Boolean) {
@@ -112,18 +124,47 @@ class WhiteListRepository(
         groupDao.deleteById(id)
     }
 
-    suspend fun addAllEntries(entries: List<WhiteListEntry>) {
+    suspend fun importBackupData(backupData: BackupData): Int {
+        val existingGroups = groupDao.getAllGroups()
+        val groupNameToId = existingGroups.associate { it.name.trim().lowercase() to it.id }.toMutableMap()
+
+        // 1. Create missing groups
+        for (bg in backupData.groups) {
+            val key = bg.name.trim().lowercase()
+            if (!groupNameToId.containsKey(key)) {
+                val createdId = groupDao.insert(
+                    GroupEntity(
+                        name = bg.name.trim(),
+                        isActive = bg.isActive
+                    )
+                )
+                groupNameToId[key] = createdId
+            }
+        }
+
         val defaultGroupId = getOrCreateDefaultGroup()
-        val entities = entries.map {
+
+        // 2. Map and insert numbers
+        val entities = backupData.entries.map { entry ->
+            val resolvedGroupId = when {
+                entry.groupName != null && groupNameToId.containsKey(entry.groupName.trim().lowercase()) ->
+                    groupNameToId[entry.groupName.trim().lowercase()]
+                entry.groupId != null && groupDao.getGroupById(entry.groupId) != null ->
+                    entry.groupId
+                else -> defaultGroupId
+            }
+
             WhiteListEntity(
-                displayName = it.displayName,
-                phoneNumber = it.phoneNumber,
-                normalizedNumber = normalizePhoneNumberUseCase.normalize(it.phoneNumber),
-                groupId = it.groupId ?: defaultGroupId,
-                createdAt = it.createdAt
+                displayName = entry.displayName,
+                phoneNumber = entry.phoneNumber,
+                normalizedNumber = normalizePhoneNumberUseCase.normalize(entry.phoneNumber),
+                groupId = resolvedGroupId,
+                createdAt = entry.createdAt
             )
         }
+
         whiteListDao.insertAll(entities)
+        return entities.size
     }
 
     suspend fun deleteEntry(id: Long) {
