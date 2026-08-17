@@ -113,8 +113,10 @@
     <string name="faq_how_it_works_desc">WhiteCall uses Android\'s CallScreeningService to inspect incoming calls in real-time. If the caller is not in your White List (or contacts if enabled), the call is instantly rejected with zero ringtone or vibration.</string>
     <string name="faq_permissions_title">Required Permissions</string>
     <string name="faq_permissions_desc">• Call Screening Role: To block calls silently.\n• Contacts: To let your saved contacts reach you.\n• Phone State: To read caller metadata.</string>
-    <string name="faq_oem_title">Xiaomi / Samsung / Huawei Background Settings</string>
-    <string name="faq_oem_desc">To prevent the system from killing WhiteCall:\n• Xiaomi (MIUI/HyperOS): Enable Autostart in App Info, set Battery Saver to "No restrictions".\n• Samsung: Add WhiteCall to "Never sleeping apps" under Battery Settings.\n• Huawei: Set Launch settings to "Manage manually" and allow background activity.</string>
+    <string name="faq_oem_title">Xiaomi / Samsung / Huawei Settings</string>
+    <string name="faq_oem_desc">To prevent the OS from killing WhiteCall in background:\n• Xiaomi (MIUI/HyperOS): Enable Autostart and set Battery Saver to No Restrictions.\n• Samsung: Add WhiteCall to Never Sleeping Apps in Battery settings.\n• Huawei: Set App Launch to Manage Manually and allow background activity.</string>
+    <string name="faq_privacy_title">Privacy &amp; Security</string>
+    <string name="faq_privacy_desc">• No ads or paid services: Completely free app with zero advertisements, subscriptions, or hidden charges.\n• No shade notifications: WhiteCall runs completely silent without cluttering your notification shade.\n• 100% Privacy: Your contacts, whitelist and call logs are stored exclusively on your device and never uploaded.\n• On-demand internet only: Internet is used strictly when you tap «Check for Updates» (GitHub Releases). In background, the app has zero network traffic.</string>
 
     <!-- AppWidget -->
     <string name="widget_name">WhiteCall Status</string>

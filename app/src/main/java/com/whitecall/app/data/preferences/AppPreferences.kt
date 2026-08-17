@@ -98,7 +98,7 @@ class AppPreferences(context: Context) {
         }
 
     var blockMode: String
-        get() = prefs.getString(KEY_BLOCK_MODE, BLOCK_MODE_REJECT) ?: BLOCK_MODE_REJECT
+        get() = prefs.getString(KEY_BLOCK_MODE, BLOCK_MODE_SILENCE) ?: BLOCK_MODE_SILENCE
         set(value) {
             prefs.edit().putString(KEY_BLOCK_MODE, value).apply()
             _blockModeFlow.value = value

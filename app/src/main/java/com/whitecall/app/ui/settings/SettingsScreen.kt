@@ -102,6 +102,7 @@ fun SettingsScreen(
 
     var faqHowItWorksExpanded by remember { mutableStateOf(false) }
     var faqPermissionsExpanded by remember { mutableStateOf(false) }
+    var faqPrivacyExpanded by remember { mutableStateOf(false) }
     var faqOemExpanded by remember { mutableStateOf(false) }
 
     // Role Manager Launcher & Lifecycle refresh
@@ -704,6 +705,13 @@ fun SettingsScreen(
                 content = stringResource(R.string.faq_permissions_desc),
                 isExpanded = faqPermissionsExpanded,
                 onToggle = { faqPermissionsExpanded = !faqPermissionsExpanded }
+            )
+
+            FaqAccordionItem(
+                title = stringResource(R.string.faq_privacy_title),
+                content = stringResource(R.string.faq_privacy_desc),
+                isExpanded = faqPrivacyExpanded,
+                onToggle = { faqPrivacyExpanded = !faqPrivacyExpanded }
             )
 
             FaqAccordionItem(
