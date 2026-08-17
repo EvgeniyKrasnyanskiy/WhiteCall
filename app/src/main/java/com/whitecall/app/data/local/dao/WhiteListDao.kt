@@ -59,6 +59,9 @@ interface WhiteListDao {
     @Query("DELETE FROM whitelist_numbers WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("DELETE FROM whitelist_numbers WHERE group_id = :groupId")
+    suspend fun deleteByGroupId(groupId: Long)
+
     @Query("DELETE FROM whitelist_numbers")
     suspend fun deleteAll()
 }

@@ -69,15 +69,26 @@ class WhiteListRepository(
         return true
     }
 
+    suspend fun getOrCreateDefaultGroup(): Long {
+        val groups = groupDao.getAllGroups()
+        if (groups.isNotEmpty()) {
+            return groups.first().id
+        }
+        val defaultGroup = com.whitecall.app.data.local.entity.GroupEntity(name = "Основная")
+        return groupDao.insert(defaultGroup)
+    }
+
     suspend fun addEntry(displayName: String, phoneNumber: String, groupId: Long? = null): Boolean {
         val normalized = normalizePhoneNumberUseCase.normalize(phoneNumber)
         if (normalized.isBlank()) return false
+
+        val targetGroupId = groupId ?: getOrCreateDefaultGroup()
 
         val entity = WhiteListEntity(
             displayName = displayName.ifBlank { phoneNumber },
             phoneNumber = phoneNumber.trim(),
             normalizedNumber = normalized,
-            groupId = groupId
+            groupId = targetGroupId
         )
         whiteListDao.insert(entity)
         return true
@@ -97,17 +108,18 @@ class WhiteListRepository(
     }
 
     suspend fun deleteGroup(id: Long) {
-        whiteListDao.unassignNumbersFromGroup(id)
+        whiteListDao.deleteByGroupId(id)
         groupDao.deleteById(id)
     }
 
     suspend fun addAllEntries(entries: List<WhiteListEntry>) {
+        val defaultGroupId = getOrCreateDefaultGroup()
         val entities = entries.map {
             WhiteListEntity(
                 displayName = it.displayName,
                 phoneNumber = it.phoneNumber,
                 normalizedNumber = normalizePhoneNumberUseCase.normalize(it.phoneNumber),
-                groupId = it.groupId,
+                groupId = it.groupId ?: defaultGroupId,
                 createdAt = it.createdAt
             )
         }

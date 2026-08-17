@@ -134,4 +134,11 @@
     <string name="block_mode_reject_desc">Звонящий сразу получает сигнал «Занято» и сброс соединения.</string>
     <string name="block_mode_silence">Беззвучный режим (гудки звонящему)</string>
     <string name="block_mode_silence_desc">Звонящий слышит обычные гудки. Телефон не звонит, экран не загорается, звонок не появляется в стандартной звонилке.</string>
+    <string name="whitelist_contacts_allowed_title">Контакты разрешены</string>
+    <string name="whitelist_contacts_allowed_desc">Все контакты из вашей телефонной книги имеют доступ. Вы можете создать папки и добавить номера, которых нет в записной книжке.</string>
+    <string name="group_default_name">Основная</string>
+    <string name="group_add_contact_btn">+ Добавить номер в папку</string>
+    <string name="group_numbers_count">Номеров: %d</string>
+    <string name="group_select_label">Папка (группа)</string>
+    <string name="dialog_delete_folder_msg">Удалить эту папку и все сохраненные в ней номера?</string>
 </resources>

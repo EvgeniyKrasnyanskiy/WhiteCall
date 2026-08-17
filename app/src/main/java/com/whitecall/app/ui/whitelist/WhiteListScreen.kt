@@ -5,8 +5,9 @@ import android.content.Intent
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,6 +31,10 @@ import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -38,12 +42,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -88,18 +91,19 @@ fun WhiteListScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val entries by viewModel.entries.collectAsState()
-    val groups by viewModel.groups.collectAsState()
-    val selectedGroupId by viewModel.selectedGroupId.collectAsState()
+    val folders by viewModel.folderList.collectAsState()
+    val expandedGroupIds by viewModel.expandedGroupIds.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val allowAllContacts by viewModel.allowAllContacts.collectAsState()
 
     var showFabMenu by remember { mutableStateOf(false) }
-    var showManualDialog by remember { mutableStateOf(false) }
+    var showManualDialogForGroupId by remember { mutableStateOf<Long?>(null) }
     var showAddGroupDialog by remember { mutableStateOf(false) }
     var showEditGroupDialog by remember { mutableStateOf<GroupItem?>(null) }
     var showDeleteGroupDialog by remember { mutableStateOf<GroupItem?>(null) }
     var showContactsRationale by remember { mutableStateOf(false) }
+
+    var targetGroupIdForContactPicker by remember { mutableStateOf<Long?>(null) }
 
     // System Contact Picker Launcher
     val contactPickerLauncher = rememberLauncherForActivityResult(
@@ -110,7 +114,7 @@ fun WhiteListScreen(
             if (uri != null) {
                 val picked = ContactHelper.extractContactFromUri(context, uri)
                 if (picked != null) {
-                    viewModel.addContactNumber(picked.name, picked.phoneNumber)
+                    viewModel.addContactNumber(picked.name, picked.phoneNumber, targetGroupIdForContactPicker)
                     scope.launch {
                         snackbarHostState.showSnackbar(context.getString(R.string.msg_number_added))
                     }
@@ -146,12 +150,23 @@ fun WhiteListScreen(
                     onDismissRequest = { showFabMenu = false }
                 ) {
                     DropdownMenuItem(
+                        text = { Text(stringResource(R.string.whitelist_add_group)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.CreateNewFolder, contentDescription = null)
+                        },
+                        onClick = {
+                            showFabMenu = false
+                            showAddGroupDialog = true
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text(stringResource(R.string.whitelist_add_from_contacts)) },
                         leadingIcon = {
                             Icon(Icons.Default.Contacts, contentDescription = null)
                         },
                         onClick = {
                             showFabMenu = false
+                            targetGroupIdForContactPicker = null
                             if (ContactHelper.hasContactsPermission(context)) {
                                 val intent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
                                 contactPickerLauncher.launch(intent)
@@ -167,17 +182,7 @@ fun WhiteListScreen(
                         },
                         onClick = {
                             showFabMenu = false
-                            showManualDialog = true
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.whitelist_add_group)) },
-                        leadingIcon = {
-                            Icon(Icons.Default.CreateNewFolder, contentDescription = null)
-                        },
-                        onClick = {
-                            showFabMenu = false
-                            showAddGroupDialog = true
+                            showManualDialogForGroupId = null
                         }
                     )
                 }
@@ -257,124 +262,54 @@ fun WhiteListScreen(
                 }
             }
 
-            // 3. Groups Chips Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                FilterChip(
-                    selected = selectedGroupId == null,
-                    onClick = { viewModel.selectGroup(null) },
-                    label = { Text("${stringResource(R.string.group_all)}") },
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                FilterChip(
-                    selected = selectedGroupId == -1L,
-                    onClick = { viewModel.selectGroup(-1L) },
-                    label = { Text(stringResource(R.string.group_unassigned)) },
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                groups.forEach { group ->
-                    FilterChip(
-                        selected = selectedGroupId == group.id,
-                        onClick = { viewModel.selectGroup(group.id) },
-                        leadingIcon = {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(
-                                        if (group.isActive) StatusActive else StatusInactive,
-                                        CircleShape
-                                    )
-                            )
-                        },
-                        label = { Text(group.name) },
-                        shape = RoundedCornerShape(12.dp)
+            // 3. Folders List or Empty State
+            val totalContactsCount = folders.sumOf { it.entries.size }
+            if (folders.isEmpty() || totalContactsCount == 0) {
+                if (allowAllContacts) {
+                    // Informative card when contacts are allowed
+                    EmptyStateView(
+                        iconRes = R.drawable.ic_contact,
+                        title = stringResource(R.string.whitelist_contacts_allowed_title),
+                        description = stringResource(R.string.whitelist_contacts_allowed_desc),
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    // Standard empty view
+                    EmptyStateView(
+                        iconRes = R.drawable.ic_shield,
+                        title = stringResource(R.string.whitelist_empty_title),
+                        description = stringResource(R.string.whitelist_empty_desc),
+                        modifier = Modifier.weight(1f)
                     )
                 }
-            }
-
-            // 4. Selected Group Banner (if a custom group is selected)
-            val currentGroup = groups.firstOrNull { it.id == selectedGroupId }
-            if (currentGroup != null) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = currentGroup.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (currentGroup.isActive) stringResource(R.string.group_toggle_active) else stringResource(R.string.group_toggle_inactive),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (currentGroup.isActive) StatusActive else StatusInactive,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Switch(
-                            checked = currentGroup.isActive,
-                            onCheckedChange = { active ->
-                                viewModel.setGroupActive(currentGroup.id, active)
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
-                        IconButton(onClick = { showEditGroupDialog = currentGroup }) {
-                            Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        }
-                        IconButton(onClick = { showDeleteGroupDialog = currentGroup }) {
-                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
-            }
-
-            // 5. Numbers List or Empty State
-            if (entries.isEmpty()) {
-                EmptyStateView(
-                    iconRes = R.drawable.ic_shield,
-                    title = stringResource(R.string.whitelist_empty_title),
-                    description = stringResource(R.string.whitelist_empty_desc),
-                    modifier = Modifier.weight(1f)
-                )
             } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(entries, key = { it.id }) { entry ->
-                        val entryGroupName = groups.firstOrNull { it.id == entry.groupId }?.name
-                        WhiteListEntryItem(
-                            entry = entry,
-                            groupName = entryGroupName,
-                            onDelete = {
-                                viewModel.deleteEntry(entry.id)
+                    items(folders, key = { it.group.id }) { item ->
+                        val isExpanded = expandedGroupIds.contains(item.group.id)
+                        FolderCardItem(
+                            folder = item,
+                            isExpanded = isExpanded,
+                            onToggleExpand = { viewModel.toggleGroupExpanded(item.group.id) },
+                            onToggleActive = { active -> viewModel.setGroupActive(item.group.id, active) },
+                            onEdit = { showEditGroupDialog = item.group },
+                            onDelete = { showDeleteGroupDialog = item.group },
+                            onAddManual = { showManualDialogForGroupId = item.group.id },
+                            onAddContact = {
+                                targetGroupIdForContactPicker = item.group.id
+                                if (ContactHelper.hasContactsPermission(context)) {
+                                    val intent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+                                    contactPickerLauncher.launch(intent)
+                                } else {
+                                    showContactsRationale = true
+                                }
+                            },
+                            onDeleteEntry = { entryId ->
+                                viewModel.deleteEntry(entryId)
                                 scope.launch {
                                     snackbarHostState.showSnackbar(context.getString(R.string.msg_number_deleted))
                                 }
@@ -387,13 +322,13 @@ fun WhiteListScreen(
     }
 
     // Manual Add Number Dialog
-    if (showManualDialog) {
+    if (showManualDialogForGroupId != null || (showFabMenu == false && showManualDialogForGroupId == -100L)) {
         var nameInput by remember { mutableStateOf("") }
         var phoneInput by remember { mutableStateOf("") }
         var isError by remember { mutableStateOf(false) }
 
         AlertDialog(
-            onDismissRequest = { showManualDialog = false },
+            onDismissRequest = { showManualDialogForGroupId = null },
             title = { Text(stringResource(R.string.dialog_add_number_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -431,8 +366,9 @@ fun WhiteListScreen(
                             viewModel.addManualNumber(
                                 name = nameInput,
                                 phoneNumber = phoneInput,
+                                groupId = showManualDialogForGroupId,
                                 onSuccess = {
-                                    showManualDialog = false
+                                    showManualDialogForGroupId = null
                                     scope.launch {
                                         snackbarHostState.showSnackbar(context.getString(R.string.msg_number_added))
                                     }
@@ -446,7 +382,7 @@ fun WhiteListScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showManualDialog = false }) {
+                TextButton(onClick = { showManualDialogForGroupId = null }) {
                     Text(stringResource(R.string.btn_cancel))
                 }
             }
@@ -539,7 +475,7 @@ fun WhiteListScreen(
         AlertDialog(
             onDismissRequest = { showDeleteGroupDialog = null },
             title = { Text(stringResource(R.string.dialog_delete_group_title)) },
-            text = { Text(stringResource(R.string.dialog_delete_group_msg)) },
+            text = { Text(stringResource(R.string.dialog_delete_folder_msg)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -576,78 +512,220 @@ fun WhiteListScreen(
 }
 
 @Composable
-fun WhiteListEntryItem(
-    entry: WhiteListEntry,
-    groupName: String? = null,
-    onDelete: () -> Unit
+fun FolderCardItem(
+    folder: GroupWithEntries,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onToggleActive: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onAddManual: () -> Unit,
+    onAddContact: () -> Unit,
+    onDeleteEntry: (Long) -> Unit
 ) {
+    val group = folder.group
+    val entries = folder.entries
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Folder Header Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpand() }
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Folder Icon with active indicator
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    Icon(
+                        imageVector = Icons.Default.Folder,
+                        contentDescription = null,
+                        tint = if (group.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(
+                                if (group.isActive) StatusActive else StatusInactive,
+                                CircleShape
+                            )
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = group.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.group_numbers_count, entries.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Switch for folder active status
+                Switch(
+                    checked = group.isActive,
+                    onCheckedChange = onToggleActive,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                )
+
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Expanded Folder Content (Contacts inside this folder)
+            AnimatedVisibility(visible = isExpanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    if (entries.isEmpty()) {
+                        Text(
+                            text = "В этой папке пока нет номеров",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
+                    } else {
+                        entries.forEach { entry ->
+                            FolderContactRow(
+                                entry = entry,
+                                onDelete = { onDeleteEntry(entry.id) }
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Buttons to add contact inside this specific folder
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onAddContact,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.Contacts, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Из контактов", fontSize = 12.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = onAddManual,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Вручную", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FolderContactRow(
+    entry: WhiteListEntry,
+    onDelete: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Initial circle avatar
             val initial = entry.displayName.firstOrNull()?.uppercaseChar()?.toString() ?: "#"
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(42.dp)
+                modifier = Modifier.size(34.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = initial,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = entry.displayName,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 if (entry.displayName != entry.phoneNumber) {
-                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = entry.phoneNumber,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                if (groupName != null) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = groupName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
             }
 
-            IconButton(onClick = onDelete) {
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_delete),
                     contentDescription = stringResource(R.string.btn_delete),
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
