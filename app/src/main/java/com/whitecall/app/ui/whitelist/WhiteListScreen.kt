@@ -124,6 +124,7 @@ fun WhiteListScreen(
     val allowAllContacts by viewModel.allowAllContacts.collectAsState()
     val scheduleSettings by viewModel.scheduleSettings.collectAsState()
 
+    var isScheduleExpanded by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
@@ -369,8 +370,35 @@ fun WhiteListScreen(
                     )
 
                     // B. Schedule Settings Row
+                    val dayLabels = listOf(
+                        Calendar.MONDAY to stringResource(R.string.day_mon),
+                        Calendar.TUESDAY to stringResource(R.string.day_tue),
+                        Calendar.WEDNESDAY to stringResource(R.string.day_wed),
+                        Calendar.THURSDAY to stringResource(R.string.day_thu),
+                        Calendar.FRIDAY to stringResource(R.string.day_fri),
+                        Calendar.SATURDAY to stringResource(R.string.day_sat),
+                        Calendar.SUNDAY to stringResource(R.string.day_sun)
+                    )
+                    val scheduleDaysSummary = if (scheduleSettings.activeDays.size == 7) {
+                        "ежедневно"
+                    } else {
+                        dayLabels.filter { scheduleSettings.activeDays.contains(it.first) }.joinToString(", ") { it.second }
+                    }
+                    val scheduleSummary = String.format(
+                        "%02d:%02d – %02d:%02d (%s)",
+                        scheduleSettings.startHour,
+                        scheduleSettings.startMinute,
+                        scheduleSettings.endHour,
+                        scheduleSettings.endMinute,
+                        scheduleDaysSummary
+                    )
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = scheduleSettings.isEnabled) {
+                                isScheduleExpanded = !isScheduleExpanded
+                            },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -380,16 +408,39 @@ fun WhiteListScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = stringResource(R.string.schedule_enable_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (scheduleSettings.isEnabled && !isScheduleExpanded) {
+                                Text(
+                                    text = scheduleSummary,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.schedule_enable_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
+                        if (scheduleSettings.isEnabled) {
+                            IconButton(
+                                onClick = { isScheduleExpanded = !isScheduleExpanded },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isScheduleExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
                         Switch(
                             checked = scheduleSettings.isEnabled,
                             onCheckedChange = { enabled ->
+                                if (enabled) isScheduleExpanded = true
                                 viewModel.updateScheduleSettings(
                                     context,
                                     scheduleSettings.copy(isEnabled = enabled)
@@ -399,7 +450,7 @@ fun WhiteListScreen(
                         )
                     }
 
-                    AnimatedVisibility(visible = scheduleSettings.isEnabled) {
+                    AnimatedVisibility(visible = scheduleSettings.isEnabled && isScheduleExpanded) {
                         Column(modifier = Modifier.padding(top = 10.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -452,21 +503,11 @@ fun WhiteListScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            val days = listOf(
-                                Calendar.MONDAY to R.string.day_mon,
-                                Calendar.TUESDAY to R.string.day_tue,
-                                Calendar.WEDNESDAY to R.string.day_wed,
-                                Calendar.THURSDAY to R.string.day_thu,
-                                Calendar.FRIDAY to R.string.day_fri,
-                                Calendar.SATURDAY to R.string.day_sat,
-                                Calendar.SUNDAY to R.string.day_sun
-                            )
-
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                days.forEach { (calDay, stringResId) ->
+                                dayLabels.forEach { (calDay, label) ->
                                     val isSelected = scheduleSettings.activeDays.contains(calDay)
                                     FilterChip(
                                         selected = isSelected,
@@ -483,7 +524,7 @@ fun WhiteListScreen(
                                                 scheduleSettings.copy(activeDays = newDays)
                                             )
                                         },
-                                        label = { Text(stringResource(stringResId), fontSize = 11.sp) },
+                                        label = { Text(label, fontSize = 11.sp) },
                                         leadingIcon = if (isSelected) {
                                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                                         } else null,
@@ -493,6 +534,17 @@ fun WhiteListScreen(
                                         )
                                     )
                                 }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            TextButton(
+                                onClick = { isScheduleExpanded = false },
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Icon(Icons.Default.ExpandLess, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Свернуть", fontSize = 12.sp)
                             }
                         }
                     }
