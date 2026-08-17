@@ -1,15 +1,9 @@
 package com.whitecall.app.ui
 
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -31,8 +25,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,8 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -65,7 +55,6 @@ import com.whitecall.app.ui.theme.WhiteCallTheme
 import com.whitecall.app.ui.whitelist.WhiteListScreen
 import com.whitecall.app.util.LocaleHelper
 import com.whitecall.app.util.PermissionHelper
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -77,11 +66,6 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             val appTheme by app.preferences.appThemeFlow.collectAsState()
-            val appLanguage by app.preferences.appLanguageFlow.collectAsState()
-
-            LaunchedEffect(appLanguage) {
-                LocaleHelper.applyLanguage(appLanguage)
-            }
 
             val darkTheme = when (appTheme) {
                 "dark" -> true
@@ -89,38 +73,20 @@ class MainActivity : AppCompatActivity() {
                 else -> isSystemInDarkTheme()
             }
 
-            // Provide localized context and configuration smoothly
-            val targetLocale = if (appLanguage == "en") Locale.ENGLISH else Locale("ru")
-            val baseConfig = LocalConfiguration.current
-            val localizedConfig = remember(targetLocale, baseConfig) {
-                Configuration(baseConfig).apply {
-                    setLocale(targetLocale)
+            WhiteCallTheme(darkTheme = darkTheme) {
+                var showOnboarding by remember {
+                    mutableStateOf(!app.preferences.isOnboardingCompleted && !PermissionHelper.isCallScreeningRoleHeld(this@MainActivity))
                 }
-            }
-            val baseContext = LocalContext.current
-            val localizedContext = remember(targetLocale, baseContext) {
-                baseContext.createConfigurationContext(localizedConfig)
-            }
 
-            CompositionLocalProvider(
-                LocalConfiguration provides localizedConfig,
-                LocalContext provides localizedContext
-            ) {
-                WhiteCallTheme(darkTheme = darkTheme) {
-                    var showOnboarding by remember {
-                        mutableStateOf(!app.preferences.isOnboardingCompleted && !PermissionHelper.isCallScreeningRoleHeld(this@MainActivity))
-                    }
+                MainScreen(app = app)
 
-                    MainScreen(app = app)
-
-                    if (showOnboarding) {
-                        OnboardingWizardDialog(
-                            onDismiss = {
-                                app.preferences.isOnboardingCompleted = true
-                                showOnboarding = false
-                            }
-                        )
-                    }
+                if (showOnboarding) {
+                    OnboardingWizardDialog(
+                        onDismiss = {
+                            app.preferences.isOnboardingCompleted = true
+                            showOnboarding = false
+                        }
+                    )
                 }
             }
         }

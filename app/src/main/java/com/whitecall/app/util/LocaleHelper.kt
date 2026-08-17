@@ -9,12 +9,15 @@ object LocaleHelper {
      * Applies language preference ("system", "en", "ru").
      */
     fun applyLanguage(languageCode: String) {
-        val appLocaleList = when (languageCode.lowercase()) {
+        val currentLocales = AppCompatDelegate.getApplicationLocales()
+        val targetLocales = when (languageCode.lowercase()) {
             "en" -> LocaleListCompat.forLanguageTags("en")
             "ru" -> LocaleListCompat.forLanguageTags("ru")
             else -> LocaleListCompat.getEmptyLocaleList() // System default
         }
-        AppCompatDelegate.setApplicationLocales(appLocaleList)
+        if (currentLocales != targetLocales) {
+            AppCompatDelegate.setApplicationLocales(targetLocales)
+        }
     }
 
     /**
