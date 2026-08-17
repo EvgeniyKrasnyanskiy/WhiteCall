@@ -117,6 +117,19 @@ fun WhiteListScreen(
         mutableStateOf(PermissionHelper.isCallScreeningRoleHeld(context))
     }
 
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                isRoleHeld = PermissionHelper.isCallScreeningRoleHeld(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val roleLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
@@ -221,8 +234,12 @@ fun WhiteListScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Warning Banner if Call Screening is not set as default
-            if (!isRoleHeld) {
+            // Warning Banner if Call Screening is not set as default (smooth animated appearance/exit)
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !isRoleHeld,
+                enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+                exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
+            ) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
