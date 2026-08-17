@@ -386,8 +386,7 @@ fun WhiteListScreen(
             }
 
             // 4. Folders List or Empty State
-            val totalContactsCount = folders.sumOf { it.entries.size }
-            if (folders.isEmpty() || totalContactsCount == 0) {
+            if (folders.isEmpty()) {
                 if (allowAllContacts) {
                     EmptyStateView(
                         iconRes = R.drawable.ic_contact,
