@@ -1,28 +1,41 @@
-# План реализации доработок WhiteCall
+# План устранения замечаний аудита и подготовки релиза
 
-## 1. Контрастная рамка для переключателей в темной теме
-- В `SwitchDefaults.colors` настроить явную видимую рамку при выключенном состоянии:
-  - `uncheckedBorderColor = MaterialTheme.colorScheme.primary` (акцентная синяя рамка `#3B82F6`).
-  - `uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)` (темный фон трека с четкой границей).
-  - Применить ко всем переключателям в приложении: на экранах «Белый список» (папки, контакты) и «Настройки» (главная защита, расписание).
+## Цель
+Устранить обнаруженные в ходе аудита баги утечки памяти и неоптимальных запросов, проверить сборку и тесты, собрать релизный APK без изменения версии (1.0.0), выполнить коммит и пуш в GitHub.
 
-## 2. Исправление открытия диалога «Вручную» по кнопке «+»
-- В `WhiteListScreen.kt` устранить баг состояния: разделить `showManualDialog` (булевый флаг открытия) и `selectedGroupIdForManual` (ID папки).
-- При нажатии «+» -> «Вручную» диалог гарантированно открывается с выбором папки или автосохранением в «Основную».
+---
 
-## 3. Система проверки обновлений через GitHub Releases
-- Создать легковесный `UpdateChecker.kt` (обращение к публичному API `https://api.github.com/repos/EvgeniyKrasnyanskiy/WhiteCall/releases/latest`).
-- Сравнение версии `tag_name` (например, `v1.0.1`) с текущей версией приложения `BuildConfig.VERSION_NAME`.
-- В раздел «Настройки» добавить блок **«Обновление приложения»**:
-  - Отображение текущей версии (например, `Версия 1.0.0`).
-  - Кнопка **«Проверить обновления»**.
-  - При наличии обновления — диалог с описанием изменений (Changelog) и кнопкой **«Скачать обновление»** (переход к скачиванию APK).
+## 1. Устранение критической утечки CoroutineScope в службе фильтрации
+- **Файл**: `app/src/main/java/com/whitecall/app/service/WhiteCallScreeningService.kt`
+- **Проблема**: `serviceScope` (`SupervisorJob() + Dispatchers.IO`) создается в сервисе и никогда не отменяется при уничтожении сервиса (`onDestroy`). При перезапуске службы системой корутины и контекст могут утекать.
+- **Решение**: Переопределить `onDestroy()`, вызвать `super.onDestroy()` и `serviceScope.cancel()`.
 
-## 4. Компактная пиктограмма «Очистить журнал»
-- На экране «Журнал блокировок» заменить большую кнопку на элегантный `IconButton` (иконка корзины / очистки) в правом верхнем углу заголовка с подтверждающим диалогом.
+---
 
-## 5. Релизная сборка, уменьшение размера и версионированное имя APK
-- В `app/build.gradle.kts`:
-  - Включить R8 оптимизацию и сжатие ресурсов для Release: `isMinifyEnabled = true`, `isShrinkResources = true` (уменьшит APK до ~4-6 Мб).
-  - Настроить именование итогового APK с номером версии: `WhiteCall-v1.0.0.apk`.
-  - Подготовить конфигурацию подписи (`signingConfigs.release`): если у вас уже есть файл ключа (`.jks` / `.keystore`), подключим его, либо сгенерируем релизный ключ по вашим параметрам.
+## 2. Устранение двойного обращения к ContactsContract
+- **Файл**: `app/src/main/java/com/whitecall/app/domain/usecase/ShouldBlockCallUseCase.kt`
+- **Проблема**: При включенном `allowAllContacts` метод `ContactHelper.getContactNameByNumber` вызывался сначала на строке 55, а если контакт не найден — повторно вызывался на строке 66 для записи в журнал.
+- **Решение**: Вызывать `ContactHelper.getContactNameByNumber` один раз, кэшировать имя в локальную переменную и повторно использовать его при возврате `CallFilterResult`.
+
+---
+
+## 3. Устранение O(N) загрузки всей базы номеров в память при блокировке вызова
+- **Файл**: `app/src/main/java/com/whitecall/app/data/repository/WhiteListRepository.kt`
+- **Проблема**: В `isNumberInWhiteList` в качестве запасного варианта выполнялся `whiteListDao.getAllNumbers()`, загружавший в память и десериализовавший все записи белого списка на каждый заблокированный звонок.
+- **Решение**: Исключить вызов `getAllNumbers()`. Метод `whiteListDao.findMatchingNumber(sigDigits)` уже выполняет поиск по SQL LIKE по последним значащим цифрам. При необходимости дополнить SQL-запрос в `WhiteListDao` проверкой исходного поля `phone_number`.
+
+---
+
+## 4. Оптимизация жизненного цикла CoroutineScope в мониторе звонков
+- **Файл**: `app/src/main/java/com/whitecall/app/service/CallStateMonitor.kt`
+- **Проблема**: На каждый заблокированный звонок создавался новый экземпляр `CoroutineScope(Dispatchers.IO).launch`.
+- **Решение**: Использовать единый постоянный `monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)` внутри синглтона `CallStateMonitor`.
+
+---
+
+## 5. Проверка, релизная сборка, коммит и пуш
+1. Запуск unit-тестов: `.\gradlew.bat test`.
+2. Сборка релизного APK: `.\gradlew.bat assembleRelease` (версия остается 1.0.0, файл `WhiteCall-v1.0.0.apk`).
+3. Проверка `git diff --stat`.
+4. Создание коммита по Conventional Commits (`fix: resolve service scope leak, duplicate contact queries, and whitelist scan`).
+5. Пуш изменений в GitHub: `git push origin main`.

@@ -50,21 +50,19 @@ class ShouldBlockCallUseCase(
             )
         }
 
-        // 4. Check if "Allow all contacts" is enabled and number is in System Contacts
-        if (preferences.allowAllContacts) {
-            val contactName = ContactHelper.getContactNameByNumber(context, rawIncomingNumber)
-            if (!contactName.isNullOrBlank()) {
-                return CallFilterResult(
-                    shouldBlock = false,
-                    reason = "ALLOWED_CONTACT",
-                    callerName = contactName
-                )
-            }
-        }
-
-        // 5. Fallback: Lookup contact name for logging if possible, then block
+        // 4. Lookup contact name once for filtering or logging
         val contactName = ContactHelper.getContactNameByNumber(context, rawIncomingNumber)
 
+        // 5. Check if "Allow all contacts" is enabled and number is in System Contacts
+        if (preferences.allowAllContacts && !contactName.isNullOrBlank()) {
+            return CallFilterResult(
+                shouldBlock = false,
+                reason = "ALLOWED_CONTACT",
+                callerName = contactName
+            )
+        }
+
+        // 6. Otherwise block and pass cached contactName for logging
         return CallFilterResult(
             shouldBlock = true,
             reason = "NOT_IN_WHITELIST",

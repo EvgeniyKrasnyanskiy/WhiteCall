@@ -25,6 +25,7 @@ interface WhiteListDao {
         SELECT * FROM whitelist_numbers 
         WHERE normalized_number LIKE '%' || :partialNumber 
            OR :partialNumber LIKE '%' || normalized_number 
+           OR phone_number LIKE '%' || :partialNumber
         LIMIT 1
     """)
     suspend fun findMatchingNumber(partialNumber: String): WhiteListEntity?

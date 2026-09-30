@@ -55,13 +55,6 @@ class WhiteListRepository(
         }
 
         if (matchedEntity == null) {
-            val all = whiteListDao.getAllNumbers()
-            matchedEntity = all.firstOrNull {
-                normalizePhoneNumberUseCase.areNumbersEquivalent(it.phoneNumber, incomingNumber)
-            }
-        }
-
-        if (matchedEntity == null) {
             return false
         }
 

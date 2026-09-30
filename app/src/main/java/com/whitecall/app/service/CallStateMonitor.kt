@@ -5,18 +5,20 @@ import com.whitecall.app.widget.WhiteCallWidgetProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 object CallStateMonitor {
 
+    private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var activeCallJob: Job? = null
 
     fun onCallBlocked(context: Context, callerDisplay: String) {
         // Cancel any previous alert job
         activeCallJob?.cancel()
 
-        activeCallJob = CoroutineScope(Dispatchers.IO).launch {
+        activeCallJob = monitorScope.launch {
             val appContext = context.applicationContext
 
             // Flash green handset and show caller for 10 full seconds (20 pulses x 500ms)

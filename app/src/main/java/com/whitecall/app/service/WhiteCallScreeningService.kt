@@ -9,6 +9,7 @@ import com.whitecall.app.widget.WhiteCallWidgetProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class WhiteCallScreeningService : CallScreeningService() {
@@ -85,5 +86,10 @@ class WhiteCallScreeningService : CallScreeningService() {
                 respondToCall(callDetails, CallResponse.Builder().build())
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 }
