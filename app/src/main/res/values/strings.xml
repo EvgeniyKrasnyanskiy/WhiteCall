@@ -49,8 +49,12 @@
     <string name="btn_call">Call</string>
     <string name="btn_copy_number">Copy number</string>
     <string name="msg_number_copied">Number copied to clipboard</string>
-    <string name="dialog_add_number_action_title">Add Number</string>
+    <string name="dialog_add_number_action_title">Number Actions</string>
+    <string name="dialog_action_number_title">Number Actions</string>
     <string name="action_add_to_whitelist">Add to WhiteCall Whitelist</string>
+    <string name="action_remove_from_whitelist">Remove from Whitelist</string>
+    <string name="btn_remove_from_whitelist">Remove from Whitelist</string>
+    <string name="msg_number_removed_whitelist">Number removed from whitelist</string>
     <string name="action_save_to_contacts">Save to Phone Contacts</string>
 
     <!-- Groups -->
@@ -146,6 +150,9 @@
     <string name="widget_blocked_short">Block: %d</string>
     <string name="widget_title_compact">WC</string>
     <string name="widget_title_full">WhiteCall</string>
+    <string name="widget_status_active">Active</string>
+    <string name="widget_status_inactive">Disabled</string>
+    <string name="widget_status_scheduled">Schedule</string>
     <string name="setting_about_app">About App</string>
     <string name="setting_about_app_desc">Help, privacy, OEM settings &amp; updates</string>
     <string name="block_mode_silence_short">Silent (ringing)</string>

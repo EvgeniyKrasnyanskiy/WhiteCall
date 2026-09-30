@@ -160,6 +160,29 @@ class WhiteListRepository(
         return entities.size
     }
 
+    suspend fun findEntryByNumber(phoneNumber: String): WhiteListEntry? {
+        if (phoneNumber.isBlank()) return null
+        val normalized = normalizePhoneNumberUseCase.normalize(phoneNumber)
+        var matchedEntity = whiteListDao.findByNormalizedNumber(normalized)
+        if (matchedEntity == null) {
+            val sigDigits = normalizePhoneNumberUseCase.extractSignificantDigits(phoneNumber)
+            if (sigDigits.length >= 7) {
+                matchedEntity = whiteListDao.findMatchingNumber(sigDigits)
+            }
+        }
+        return matchedEntity?.toDomain()
+    }
+
+    suspend fun deleteByPhoneNumber(phoneNumber: String): Boolean {
+        val entry = findEntryByNumber(phoneNumber)
+        return if (entry != null) {
+            deleteEntry(entry.id)
+            true
+        } else {
+            false
+        }
+    }
+
     suspend fun deleteEntry(id: Long) {
         whiteListDao.deleteById(id)
     }

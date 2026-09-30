@@ -49,8 +49,12 @@
     <string name="btn_call">Позвонить</string>
     <string name="btn_copy_number">Скопировать номер</string>
     <string name="msg_number_copied">Номер скопирован в буфер обмена</string>
-    <string name="dialog_add_number_action_title">Добавить номер</string>
+    <string name="dialog_add_number_action_title">Действия с номером</string>
+    <string name="dialog_action_number_title">Действия с номером</string>
     <string name="action_add_to_whitelist">В белый список WhiteCall</string>
+    <string name="action_remove_from_whitelist">Удалить из белого списка</string>
+    <string name="btn_remove_from_whitelist">Удалить из белого списка</string>
+    <string name="msg_number_removed_whitelist">Номер удален из белого списка</string>
     <string name="action_save_to_contacts">В контакты телефона</string>
 
     <!-- Groups -->
@@ -146,6 +150,9 @@
     <string name="widget_blocked_short">Блок: %d</string>
     <string name="widget_title_compact">WC</string>
     <string name="widget_title_full">WhiteCall</string>
+    <string name="widget_status_active">Активен</string>
+    <string name="widget_status_inactive">Отключён</string>
+    <string name="widget_status_scheduled">Расписание</string>
     <string name="setting_about_app">О программе</string>
     <string name="setting_about_app_desc">Справка, приватность, OEM-настройки и обновления</string>
     <string name="block_mode_silence_short">Беззвучный (гудки)</string>

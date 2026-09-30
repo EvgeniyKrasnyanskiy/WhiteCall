@@ -193,8 +193,48 @@ fun BlockedLogScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Option 1: Add to WhiteCall whitelist (if not already added)
-                    if (!isTargetWhitelisted) {
+                    // Option 1: Whitelist Action (Add or Remove)
+                    if (isTargetWhitelisted) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.removeFromWhiteList(target.phoneNumber) {
+                                        scope.showCustomSnackbar(
+                                            snackbarHostState,
+                                            context.getString(R.string.msg_number_removed_whitelist)
+                                        )
+                                    }
+                                    targetForActionDialog = null
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_delete),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = stringResource(R.string.action_remove_from_whitelist),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    } else {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -479,17 +519,26 @@ fun GroupedBlockedCallItem(
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    // Add Button (+)
+                    // Add or Remove Whitelist Button
                     IconButton(
                         onClick = onAddClick,
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_add),
-                            contentDescription = stringResource(R.string.btn_add_to_whitelist),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
+                        if (isWhitelisted) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_delete),
+                                contentDescription = stringResource(R.string.btn_remove_from_whitelist),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_add),
+                                contentDescription = stringResource(R.string.btn_add_to_whitelist),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -522,16 +571,13 @@ fun GroupedBlockedCallItem(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                val reasonStr = if (call.reason == "ANONYMOUS_CALLER") {
-                                    stringResource(R.string.blocked_reason_anonymous)
-                                } else {
-                                    stringResource(R.string.blocked_reason_not_in_whitelist)
+                                if (call.reason == "ANONYMOUS_CALLER") {
+                                    Text(
+                                        text = stringResource(R.string.blocked_reason_anonymous),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                                    )
                                 }
-                                Text(
-                                    text = reasonStr,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
-                                )
                             }
                         }
                     }

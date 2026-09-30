@@ -183,17 +183,17 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
             if (isProtectionActive) {
                 powerColor = ContextCompat.getColor(context, R.color.widget_status_active)
                 if (isScheduleEnabled) {
-                    statusText = context.getString(R.string.protection_status_scheduled)
+                    statusText = context.getString(R.string.widget_status_scheduled)
                     statusColor = ContextCompat.getColor(context, R.color.widget_status_scheduled)
                     iconRes = R.drawable.ic_clock
                 } else {
-                    statusText = context.getString(R.string.protection_status_active)
+                    statusText = context.getString(R.string.widget_status_active)
                     statusColor = ContextCompat.getColor(context, R.color.widget_status_active)
                     iconRes = R.drawable.ic_shield
                 }
             } else {
                 powerColor = ContextCompat.getColor(context, R.color.widget_status_inactive)
-                statusText = context.getString(R.string.protection_status_inactive)
+                statusText = context.getString(R.string.widget_status_inactive)
                 statusColor = ContextCompat.getColor(context, R.color.widget_status_inactive)
                 iconRes = R.drawable.ic_shield_off
             }

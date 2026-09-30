@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitecall.app.WhiteCallApplication
 import com.whitecall.app.domain.model.BlockedCallLog
+import com.whitecall.app.util.ContactHelper
 import com.whitecall.app.util.PhoneUtils
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -58,10 +59,13 @@ class BlockedLogViewModel(
                     val isWhitelisted = whitelist.any {
                         normalizeUseCase.areNumbersEquivalent(it.phoneNumber, latest.phoneNumber)
                     }
+                    val callerName = callsForNumber.firstOrNull { !it.callerName.isNullOrBlank() }?.callerName
+                        ?: ContactHelper.getContactNameByNumber(app, latest.phoneNumber)
+
                     GroupedBlockedCall(
                         key = "${startOfDay}_${latest.id}",
                         phoneNumber = latest.phoneNumber,
-                        callerName = callsForNumber.firstOrNull { !it.callerName.isNullOrBlank() }?.callerName,
+                        callerName = callerName,
                         isWhitelisted = isWhitelisted,
                         latestCall = latest,
                         calls = callsForNumber
@@ -94,6 +98,13 @@ class BlockedLogViewModel(
         viewModelScope.launch {
             val name = callerName ?: phoneNumber
             whiteListRepository.addEntry(name, phoneNumber)
+            onSuccess()
+        }
+    }
+
+    fun removeFromWhiteList(phoneNumber: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            whiteListRepository.deleteByPhoneNumber(phoneNumber)
             onSuccess()
         }
     }
