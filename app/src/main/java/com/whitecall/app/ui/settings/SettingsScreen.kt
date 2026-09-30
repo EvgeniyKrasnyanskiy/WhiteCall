@@ -97,7 +97,6 @@ fun SettingsScreen(
     val appLanguage by viewModel.appLanguage.collectAsState()
     val appTheme by viewModel.appTheme.collectAsState()
     val blockMode by viewModel.blockMode.collectAsState()
-    val updateState by viewModel.updateState.collectAsState()
 
     var showAboutAppDialog by remember { mutableStateOf(false) }
 
@@ -512,15 +511,60 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // GitHub Project Card (Always visible)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_info),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.github_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "v${BuildConfig.VERSION_NAME} • ${stringResource(R.string.github_desc)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = { UpdateChecker.openGitHub(context) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.btn_open_github))
+                    }
+                }
+            }
         }
     }
 
-    // Full About App Dialog with FAQ & Updates
+    // Full About App Dialog with FAQ
     if (showAboutAppDialog) {
         AboutAppDialog(
-            updateState = updateState,
-            onCheckUpdates = { viewModel.checkForUpdates() },
-            onDismissUpdateState = { viewModel.dismissUpdateDialog() },
             onDismiss = { showAboutAppDialog = false }
         )
     }
@@ -529,9 +573,6 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutAppDialog(
-    updateState: UpdateUiState,
-    onCheckUpdates: () -> Unit,
-    onDismissUpdateState: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -542,29 +583,6 @@ fun AboutAppDialog(
     var faqHowItWorksExpanded by remember { mutableStateOf(false) }
     var faqPrivacyExpanded by remember { mutableStateOf(false) }
     var faqOemExpanded by remember { mutableStateOf(false) }
-
-    // React to update state right inside this dialog
-    LaunchedEffect(updateState) {
-        when (updateState) {
-            is UpdateUiState.Success -> {
-                if (!updateState.info.hasUpdate) {
-                    scope.showCustomSnackbar(
-                        dialogSnackbarHostState,
-                        context.getString(R.string.msg_no_updates, BuildConfig.VERSION_NAME)
-                    )
-                    onDismissUpdateState()
-                }
-            }
-            is UpdateUiState.Error -> {
-                scope.showCustomSnackbar(
-                    dialogSnackbarHostState,
-                    "Ошибка проверки: ${updateState.message}"
-                )
-                onDismissUpdateState()
-            }
-            else -> {}
-        }
-    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -673,8 +691,8 @@ fun AboutAppDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Check for updates section at the bottom of About App
-                SectionHeader(title = stringResource(R.string.section_updates))
+                // GitHub section at the bottom of About App
+                SectionHeader(title = stringResource(R.string.section_github))
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -684,85 +702,34 @@ fun AboutAppDialog(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(16.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "GitHub Releases",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = stringResource(R.string.version_label, BuildConfig.VERSION_NAME),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
+                        Text(
+                            text = stringResource(R.string.github_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "v${BuildConfig.VERSION_NAME} • ${stringResource(R.string.github_desc)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
                         OutlinedButton(
-                            onClick = onCheckUpdates,
+                            onClick = { UpdateChecker.openGitHub(context) },
                             shape = RoundedCornerShape(12.dp),
-                            enabled = updateState !is UpdateUiState.Checking
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            if (updateState is UpdateUiState.Checking) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.width(8.dp))
-                            } else {
-                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                            }
-                            Text(stringResource(R.string.btn_check_updates))
+                            Text(stringResource(R.string.btn_open_github))
                         }
                     }
                 }
             }
         }
-    }
-
-    // New version available dialog
-    if (updateState is UpdateUiState.Success && updateState.info.hasUpdate) {
-        val info = updateState.info
-        AlertDialog(
-            onDismissRequest = onDismissUpdateState,
-            title = { Text(stringResource(R.string.dialog_update_title, info.latestVersion)) },
-            text = {
-                Column {
-                    if (info.releaseNotes.isNotBlank()) {
-                        Text(
-                            text = info.releaseNotes,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.msg_update_available, info.latestVersion),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        UpdateChecker.openDownloadUrl(context, info.downloadUrl.ifBlank { info.releaseUrl })
-                        onDismissUpdateState()
-                    }
-                ) {
-                    Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(R.string.btn_download_update))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismissUpdateState) {
-                    Text(stringResource(R.string.btn_cancel))
-                }
-            }
-        )
     }
 }
 

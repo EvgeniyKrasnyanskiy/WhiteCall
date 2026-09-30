@@ -42,6 +42,16 @@
     <string name="blocked_reason_anonymous">Hidden / Private ID</string>
     <string name="status_in_whitelist">In White List</string>
     <string name="status_not_in_whitelist">Not in White List</string>
+    <string name="log_date_today">Today</string>
+    <string name="log_date_yesterday">Yesterday</string>
+    <string name="log_calls_count">%d calls</string>
+    <string name="log_expand_details">Call history</string>
+    <string name="btn_call">Call</string>
+    <string name="btn_copy_number">Copy number</string>
+    <string name="msg_number_copied">Number copied to clipboard</string>
+    <string name="dialog_add_number_action_title">Add Number</string>
+    <string name="action_add_to_whitelist">Add to WhiteCall Whitelist</string>
+    <string name="action_save_to_contacts">Save to Phone Contacts</string>
 
     <!-- Groups -->
     <string name="group_all">All</string>
@@ -153,14 +163,11 @@
     <string name="group_add_contact_btn">+ Add number to folder</string>
     <string name="group_numbers_count">Numbers: %d</string>
     <string name="group_select_label">Folder (Group)</string>
-    <string name="section_updates">App Updates</string>
+    <string name="section_github">Project \u0026amp; Updates</string>
+    <string name="github_title">WhiteCall on GitHub</string>
+    <string name="github_desc">Source code, releases and project updates</string>
+    <string name="btn_open_github">Visit GitHub</string>
     <string name="version_label">Version: %s</string>
-    <string name="btn_check_updates">Check for Updates</string>
-    <string name="msg_checking_updates">Checking for updates...</string>
-    <string name="msg_no_updates">You have the latest version (%s)</string>
-    <string name="msg_update_available">Update %s is available</string>
-    <string name="btn_download_update">Download Update</string>
-    <string name="dialog_update_title">New version %s is available</string>
     <string name="section_permissions">System Permissions</string>
     <string name="msg_export_error">Error exporting backup file</string>
     <string name="dialog_delete_folder_msg">Delete this folder and all numbers inside it?</string>

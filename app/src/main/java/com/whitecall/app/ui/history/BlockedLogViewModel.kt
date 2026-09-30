@@ -4,16 +4,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitecall.app.WhiteCallApplication
 import com.whitecall.app.domain.model.BlockedCallLog
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.whitecall.app.util.PhoneUtils
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class BlockedCallUiItem(
-    val log: BlockedCallLog,
-    val isWhitelisted: Boolean
+data class GroupedBlockedCall(
+    val key: String,
+    val phoneNumber: String,
+    val callerName: String?,
+    val isWhitelisted: Boolean,
+    val latestCall: BlockedCallLog,
+    val calls: List<BlockedCallLog>
+) {
+    val totalCount: Int get() = calls.size
+}
+
+data class DateGroupedBlockedCalls(
+    val startOfDayMillis: Long,
+    val items: List<GroupedBlockedCall>
+)
+
+data class BlockedLogUiState(
+    val dateGroups: List<DateGroupedBlockedCalls> = emptyList(),
+    val totalCount: Int = 0
 )
 
 class BlockedLogViewModel(
@@ -24,20 +40,48 @@ class BlockedLogViewModel(
     private val whiteListRepository = app.whiteListRepository
     private val normalizeUseCase = app.normalizePhoneNumberUseCase
 
-    val blockedCalls: StateFlow<List<BlockedCallUiItem>> = combine(
+    val uiState: StateFlow<BlockedLogUiState> = combine(
         blockingRepository.getAllBlockedCallsFlow(),
         whiteListRepository.getAllEntriesFlow()
     ) { logs, whitelist ->
-        logs.map { log ->
-            val isWhitelisted = whitelist.any {
-                normalizeUseCase.areNumbersEquivalent(it.phoneNumber, log.phoneNumber)
+        val dateGroups = logs
+            .groupBy { PhoneUtils.getStartOfDay(it.timestamp) }
+            .map { (startOfDay, dayLogs) ->
+                val groupedByNumber = LinkedHashMap<String, MutableList<BlockedCallLog>>()
+                for (call in dayLogs) {
+                    val norm = normalizeUseCase.normalize(call.phoneNumber).ifBlank { call.phoneNumber }
+                    groupedByNumber.getOrPut(norm) { mutableListOf() }.add(call)
+                }
+
+                val items = groupedByNumber.map { (_, callsForNumber) ->
+                    val latest = callsForNumber.first()
+                    val isWhitelisted = whitelist.any {
+                        normalizeUseCase.areNumbersEquivalent(it.phoneNumber, latest.phoneNumber)
+                    }
+                    GroupedBlockedCall(
+                        key = "${startOfDay}_${latest.id}",
+                        phoneNumber = latest.phoneNumber,
+                        callerName = callsForNumber.firstOrNull { !it.callerName.isNullOrBlank() }?.callerName,
+                        isWhitelisted = isWhitelisted,
+                        latestCall = latest,
+                        calls = callsForNumber
+                    )
+                }
+
+                DateGroupedBlockedCalls(
+                    startOfDayMillis = startOfDay,
+                    items = items
+                )
             }
-            BlockedCallUiItem(log = log, isWhitelisted = isWhitelisted)
-        }
+
+        BlockedLogUiState(
+            dateGroups = dateGroups,
+            totalCount = logs.size
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
+        initialValue = BlockedLogUiState()
     )
 
     fun clearHistory() {
@@ -54,3 +98,4 @@ class BlockedLogViewModel(
         }
     }
 }
+

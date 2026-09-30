@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.whitecall.app.R
 import com.whitecall.app.WhiteCallApplication
 import com.whitecall.app.ui.MainActivity
+import com.whitecall.app.ui.navigation.NavDestination
 import com.whitecall.app.util.PhoneUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -282,9 +283,11 @@ class WhiteCallWidgetProvider : AppWidgetProvider() {
                 }
             }
 
-            // Tap root -> open app
+            // Tap root -> open app to blocked calls log
             val mainIntent = Intent(context, MainActivity::class.java).apply {
+                action = MainActivity.ACTION_OPEN_BLOCKED_LOG
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(MainActivity.EXTRA_DESTINATION, NavDestination.BlockedLog.route)
             }
             val mainPendingIntent = PendingIntent.getActivity(
                 context,

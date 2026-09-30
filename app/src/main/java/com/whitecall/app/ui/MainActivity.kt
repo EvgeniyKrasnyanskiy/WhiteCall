@@ -1,5 +1,6 @@
 package com.whitecall.app.ui
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -25,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,8 +60,17 @@ import com.whitecall.app.util.PermissionHelper
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_DESTINATION = "com.whitecall.app.EXTRA_DESTINATION"
+        const val ACTION_OPEN_BLOCKED_LOG = "com.whitecall.app.ACTION_OPEN_BLOCKED_LOG"
+    }
+
+    private val targetDestinationState = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        handleIntent(intent)
 
         val app = application as WhiteCallApplication
 
@@ -77,7 +88,11 @@ class MainActivity : AppCompatActivity() {
                     mutableStateOf(!app.preferences.isOnboardingCompleted && !PermissionHelper.isCallScreeningRoleHeld(this@MainActivity))
                 }
 
-                MainScreen(app = app)
+                MainScreen(
+                    app = app,
+                    targetDestination = targetDestinationState.value,
+                    onDestinationHandled = { targetDestinationState.value = null }
+                )
 
                 if (showOnboarding) {
                     OnboardingWizardDialog(
@@ -90,14 +105,45 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val destination = intent?.getStringExtra(EXTRA_DESTINATION)
+            ?: if (intent?.action == ACTION_OPEN_BLOCKED_LOG) NavDestination.BlockedLog.route else null
+        if (destination != null) {
+            targetDestinationState.value = destination
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(app: WhiteCallApplication) {
+fun MainScreen(
+    app: WhiteCallApplication,
+    targetDestination: String? = null,
+    onDestinationHandled: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    LaunchedEffect(targetDestination) {
+        targetDestination?.let { destination ->
+            navController.navigate(destination) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+            onDestinationHandled()
+        }
+    }
 
     val isProtectionEnabled by app.preferences.protectionEnabledFlow.collectAsState()
     val scheduleSettings by app.preferences.scheduleSettingsFlow.collectAsState()

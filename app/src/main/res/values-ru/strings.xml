@@ -42,6 +42,16 @@
     <string name="blocked_reason_anonymous">Скрытый / Анонимный номер</string>
     <string name="status_in_whitelist">В белом списке</string>
     <string name="status_not_in_whitelist">Не в белом списке</string>
+    <string name="log_date_today">Сегодня</string>
+    <string name="log_date_yesterday">Вчера</string>
+    <string name="log_calls_count">%d вызовов</string>
+    <string name="log_expand_details">История звонков</string>
+    <string name="btn_call">Позвонить</string>
+    <string name="btn_copy_number">Скопировать номер</string>
+    <string name="msg_number_copied">Номер скопирован в буфер обмена</string>
+    <string name="dialog_add_number_action_title">Добавить номер</string>
+    <string name="action_add_to_whitelist">В белый список WhiteCall</string>
+    <string name="action_save_to_contacts">В контакты телефона</string>
 
     <!-- Groups -->
     <string name="group_all">Все</string>
@@ -153,14 +163,11 @@
     <string name="group_add_contact_btn">+ Добавить номер в папку</string>
     <string name="group_numbers_count">Номеров: %d</string>
     <string name="group_select_label">Папка (группа)</string>
-    <string name="section_updates">Обновление приложения</string>
+    <string name="section_github">Проект и обновления</string>
+    <string name="github_title">WhiteCall на GitHub</string>
+    <string name="github_desc">Исходный код, релизы и новые версии проекта</string>
+    <string name="btn_open_github">Перейти на GitHub</string>
     <string name="version_label">Версия: %s</string>
-    <string name="btn_check_updates">Проверить обновления</string>
-    <string name="msg_checking_updates">Проверка обновлений...</string>
-    <string name="msg_no_updates">У вас установлена последняя версия (%s)</string>
-    <string name="msg_update_available">Доступно обновление %s</string>
-    <string name="btn_download_update">Скачать обновление</string>
-    <string name="dialog_update_title">Доступна новая версия %s</string>
     <string name="section_permissions">Системные разрешения</string>
     <string name="msg_export_error">Ошибка экспорта файла</string>
     <string name="dialog_delete_folder_msg">Удалить эту папку и все сохраненные в ней номера?</string>
