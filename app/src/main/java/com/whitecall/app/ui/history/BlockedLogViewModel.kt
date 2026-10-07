@@ -6,6 +6,7 @@ import com.whitecall.app.WhiteCallApplication
 import com.whitecall.app.domain.model.BlockedCallLog
 import com.whitecall.app.util.ContactHelper
 import com.whitecall.app.util.PhoneUtils
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -17,10 +18,13 @@ data class GroupedBlockedCall(
     val phoneNumber: String,
     val callerName: String?,
     val isWhitelisted: Boolean,
+    val isContact: Boolean = false,
+    val isAllowedByContacts: Boolean = false,
     val latestCall: BlockedCallLog,
     val calls: List<BlockedCallLog>
 ) {
     val totalCount: Int get() = calls.size
+    val isAllowed: Boolean get() = isWhitelisted || isAllowedByContacts
 }
 
 data class DateGroupedBlockedCalls(
@@ -39,12 +43,17 @@ class BlockedLogViewModel(
 
     private val blockingRepository = app.callBlockingRepository
     private val whiteListRepository = app.whiteListRepository
+    private val preferences = app.preferences
     private val normalizeUseCase = app.normalizePhoneNumberUseCase
+
+    private val refreshTrigger = MutableStateFlow(0L)
 
     val uiState: StateFlow<BlockedLogUiState> = combine(
         blockingRepository.getAllBlockedCallsFlow(),
-        whiteListRepository.getAllEntriesFlow()
-    ) { logs, whitelist ->
+        whiteListRepository.getAllEntriesFlow(),
+        preferences.allowAllContactsFlow,
+        refreshTrigger
+    ) { logs, whitelist, allowAllContacts, _ ->
         val dateGroups = logs
             .groupBy { PhoneUtils.getStartOfDay(it.timestamp) }
             .map { (startOfDay, dayLogs) ->
@@ -59,14 +68,19 @@ class BlockedLogViewModel(
                     val isWhitelisted = whitelist.any {
                         normalizeUseCase.areNumbersEquivalent(it.phoneNumber, latest.phoneNumber)
                     }
-                    val callerName = callsForNumber.firstOrNull { !it.callerName.isNullOrBlank() }?.callerName
-                        ?: ContactHelper.getContactNameByNumber(app, latest.phoneNumber)
+                    val contactName = ContactHelper.getContactNameByNumber(app, latest.phoneNumber)
+                    val isContact = !contactName.isNullOrBlank()
+                    val isAllowedByContacts = isContact && allowAllContacts
+                    val callerName = contactName
+                        ?: callsForNumber.firstOrNull { !it.callerName.isNullOrBlank() }?.callerName
 
                     GroupedBlockedCall(
                         key = "${startOfDay}_${latest.id}",
                         phoneNumber = latest.phoneNumber,
                         callerName = callerName,
                         isWhitelisted = isWhitelisted,
+                        isContact = isContact,
+                        isAllowedByContacts = isAllowedByContacts,
                         latestCall = latest,
                         calls = callsForNumber
                     )
@@ -87,6 +101,10 @@ class BlockedLogViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = BlockedLogUiState()
     )
+
+    fun refresh() {
+        refreshTrigger.value = System.currentTimeMillis()
+    }
 
     fun clearHistory() {
         viewModelScope.launch {

@@ -46,6 +46,47 @@ object ContactHelper {
         }
     }
 
+    fun getContactLookupUri(context: Context, phoneNumber: String?): Uri? {
+        if (phoneNumber.isNullOrBlank() || !hasContactsPermission(context)) {
+            return null
+        }
+
+        return try {
+            val uri = Uri.withAppendedPath(
+                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                Uri.encode(phoneNumber)
+            )
+            val projection = arrayOf(
+                ContactsContract.PhoneLookup._ID,
+                ContactsContract.PhoneLookup.LOOKUP_KEY
+            )
+
+            context.contentResolver.query(
+                uri,
+                projection,
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idIndex = cursor.getColumnIndex(ContactsContract.PhoneLookup._ID)
+                    val keyIndex = cursor.getColumnIndex(ContactsContract.PhoneLookup.LOOKUP_KEY)
+                    if (idIndex != -1 && keyIndex != -1) {
+                        val contactId = cursor.getLong(idIndex)
+                        val lookupKey = cursor.getString(keyIndex)
+                        ContactsContract.Contacts.getLookupUri(contactId, lookupKey)
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     data class ContactPickResult(val name: String, val phoneNumber: String)
 
     fun extractContactFromUri(context: Context, contactUri: Uri): ContactPickResult? {

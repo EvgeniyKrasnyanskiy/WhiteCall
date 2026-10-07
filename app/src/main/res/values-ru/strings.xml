@@ -42,6 +42,7 @@
     <string name="blocked_reason_anonymous">Скрытый / Анонимный номер</string>
     <string name="status_in_whitelist">В белом списке</string>
     <string name="status_not_in_whitelist">Не в белом списке</string>
+    <string name="status_in_contacts">В контактах</string>
     <string name="log_date_today">Сегодня</string>
     <string name="log_date_yesterday">Вчера</string>
     <string name="log_calls_count">%d вызовов</string>
@@ -56,6 +57,7 @@
     <string name="btn_remove_from_whitelist">Удалить из белого списка</string>
     <string name="msg_number_removed_whitelist">Номер удален из белого списка</string>
     <string name="action_save_to_contacts">В контакты телефона</string>
+    <string name="action_open_in_contacts">Открыть в контактах</string>
 
     <!-- Groups -->
     <string name="group_all">Все</string>

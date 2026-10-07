@@ -38,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,18 +49,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.whitecall.app.R
 import com.whitecall.app.ui.components.AppSnackbarHost
 import com.whitecall.app.ui.components.EmptyStateView
 import com.whitecall.app.ui.components.showCustomSnackbar
 import com.whitecall.app.ui.theme.StatusActive
+import com.whitecall.app.util.ContactHelper
 import com.whitecall.app.util.PhoneUtils
 
 @Composable
@@ -77,6 +82,19 @@ fun BlockedLogScreen(
 
     var showClearDialog by remember { mutableStateOf(false) }
     var targetForActionDialog by remember { mutableStateOf<GroupedBlockedCall?>(null) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Scaffold(
         snackbarHost = { AppSnackbarHost(snackbarHostState) }
@@ -276,48 +294,94 @@ fun BlockedLogScreen(
                         Spacer(modifier = Modifier.height(10.dp))
                     }
 
-                    // Option 2: Save to device contacts
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val insertIntent = Intent(Intent.ACTION_INSERT).apply {
-                                    type = ContactsContract.RawContacts.CONTENT_TYPE
-                                    putExtra(ContactsContract.Intents.Insert.PHONE, target.phoneNumber)
-                                    if (!target.callerName.isNullOrBlank() && target.callerName != target.phoneNumber) {
-                                        putExtra(ContactsContract.Intents.Insert.NAME, target.callerName)
-                                    }
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                }
-                                try {
-                                    context.startActivity(insertIntent)
-                                } catch (_: Exception) {}
-                                targetForActionDialog = null
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        Row(
+                    // Option 2: Save to device contacts or View in Contacts
+                    if (target.isContact) {
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .clickable {
+                                    val uri = ContactHelper.getContactLookupUri(context, target.phoneNumber)
+                                    val viewIntent = if (uri != null) {
+                                        Intent(Intent.ACTION_VIEW, uri)
+                                    } else {
+                                        Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI)
+                                    }.apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
+                                    try {
+                                        context.startActivity(viewIntent)
+                                    } catch (_: Exception) {}
+                                    targetForActionDialog = null
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_contact),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_contact),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = stringResource(R.string.action_open_in_contacts),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    } else {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val insertIntent = Intent(Intent.ACTION_INSERT).apply {
+                                        type = ContactsContract.RawContacts.CONTENT_TYPE
+                                        putExtra(ContactsContract.Intents.Insert.PHONE, target.phoneNumber)
+                                        if (!target.callerName.isNullOrBlank() && target.callerName != target.phoneNumber) {
+                                            putExtra(ContactsContract.Intents.Insert.NAME, target.callerName)
+                                        }
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
+                                    try {
+                                        context.startActivity(insertIntent)
+                                    } catch (_: Exception) {}
+                                    targetForActionDialog = null
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = stringResource(R.string.action_save_to_contacts),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_contact),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = stringResource(R.string.action_save_to_contacts),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
                 }
@@ -367,6 +431,8 @@ fun GroupedBlockedCallItem(
     var isExpanded by remember { mutableStateOf(false) }
     val latest = item.latestCall
     val isWhitelisted = item.isWhitelisted
+    val isAllowedByContacts = item.isAllowedByContacts
+    val isAllowed = item.isAllowed
     val hasMultipleCalls = item.calls.size > 1
     val isValidNumber = item.phoneNumber.filter { it.isDigit() }.length >= 3
 
@@ -387,17 +453,22 @@ fun GroupedBlockedCallItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Blocked icon badge
+                // Status icon badge
                 Surface(
                     shape = CircleShape,
-                    color = if (isWhitelisted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
+                    color = if (isAllowed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
                     modifier = Modifier.size(42.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
+                        val badgeIcon = when {
+                            isWhitelisted -> R.drawable.ic_check
+                            isAllowedByContacts -> R.drawable.ic_contact
+                            else -> R.drawable.ic_call_missed
+                        }
                         Icon(
-                            painter = painterResource(id = if (isWhitelisted) R.drawable.ic_check else R.drawable.ic_call_missed),
+                            painter = painterResource(id = badgeIcon),
                             contentDescription = null,
-                            tint = if (isWhitelisted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.error,
+                            tint = if (isAllowed) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -451,6 +522,13 @@ fun GroupedBlockedCallItem(
                         if (isWhitelisted) {
                             Text(
                                 text = "• ${stringResource(R.string.status_in_whitelist)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = StatusActive,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        } else if (isAllowedByContacts) {
+                            Text(
+                                text = "• ${stringResource(R.string.status_in_contacts)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = StatusActive,
                                 fontWeight = FontWeight.SemiBold
